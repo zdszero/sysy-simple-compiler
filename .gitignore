@@ -1,0 +1,4 @@
+*.o
+cm
+out.s
+out

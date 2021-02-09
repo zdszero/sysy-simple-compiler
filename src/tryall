@@ -1,0 +1,12 @@
+#! /bin/bash
+
+for file in $(ls .); do
+  if [[ $file == test* ]]; then
+    printf "file $file\n"
+    ./cm $file > out.s
+    cc -o out out.s
+    ./out
+  fi
+done
+
+echo "test finished!"
