@@ -116,24 +116,34 @@ enum yysymbol_kind_t
   YYSYMBOL_INT = 6,                        /* INT  */
   YYSYMBOL_ASSIGN = 7,                     /* ASSIGN  */
   YYSYMBOL_PRINT = 8,                      /* PRINT  */
-  YYSYMBOL_PLUS = 9,                       /* PLUS  */
-  YYSYMBOL_MINUS = 10,                     /* MINUS  */
-  YYSYMBOL_TIMES = 11,                     /* TIMES  */
-  YYSYMBOL_OVER = 12,                      /* OVER  */
-  YYSYMBOL_EQ = 13,                        /* EQ  */
-  YYSYMBOL_NE = 14,                        /* NE  */
-  YYSYMBOL_LE = 15,                        /* LE  */
-  YYSYMBOL_LT = 16,                        /* LT  */
-  YYSYMBOL_GE = 17,                        /* GE  */
-  YYSYMBOL_GT = 18,                        /* GT  */
-  YYSYMBOL_LP = 19,                        /* LP  */
-  YYSYMBOL_RP = 20,                        /* RP  */
-  YYSYMBOL_YYACCEPT = 21,                  /* $accept  */
-  YYSYMBOL_program = 22,                   /* program  */
-  YYSYMBOL_statements = 23,                /* statements  */
-  YYSYMBOL_statement = 24,                 /* statement  */
-  YYSYMBOL_var = 25,                       /* var  */
-  YYSYMBOL_expression = 26                 /* expression  */
+  YYSYMBOL_IF = 9,                         /* IF  */
+  YYSYMBOL_ELSE = 10,                      /* ELSE  */
+  YYSYMBOL_PLUS = 11,                      /* PLUS  */
+  YYSYMBOL_MINUS = 12,                     /* MINUS  */
+  YYSYMBOL_TIMES = 13,                     /* TIMES  */
+  YYSYMBOL_OVER = 14,                      /* OVER  */
+  YYSYMBOL_EQ = 15,                        /* EQ  */
+  YYSYMBOL_NE = 16,                        /* NE  */
+  YYSYMBOL_LE = 17,                        /* LE  */
+  YYSYMBOL_LT = 18,                        /* LT  */
+  YYSYMBOL_GE = 19,                        /* GE  */
+  YYSYMBOL_GT = 20,                        /* GT  */
+  YYSYMBOL_LP = 21,                        /* LP  */
+  YYSYMBOL_RP = 22,                        /* RP  */
+  YYSYMBOL_LC = 23,                        /* LC  */
+  YYSYMBOL_RC = 24,                        /* RC  */
+  YYSYMBOL_YYACCEPT = 25,                  /* $accept  */
+  YYSYMBOL_program = 26,                   /* program  */
+  YYSYMBOL_statements = 27,                /* statements  */
+  YYSYMBOL_statement = 28,                 /* statement  */
+  YYSYMBOL_print_statement = 29,           /* print_statement  */
+  YYSYMBOL_decl_statement = 30,            /* decl_statement  */
+  YYSYMBOL_assign_statement = 31,          /* assign_statement  */
+  YYSYMBOL_compound_statement = 32,        /* compound_statement  */
+  YYSYMBOL_if_statement = 33,              /* if_statement  */
+  YYSYMBOL_if_head = 34,                   /* if_head  */
+  YYSYMBOL_var = 35,                       /* var  */
+  YYSYMBOL_expression = 36                 /* expression  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -441,21 +451,21 @@ union yyalloc
 #endif /* !YYCOPY_NEEDED */
 
 /* YYFINAL -- State number of the termination state.  */
-#define YYFINAL  13
+#define YYFINAL  23
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   67
+#define YYLAST   100
 
 /* YYNTOKENS -- Number of terminals.  */
-#define YYNTOKENS  21
+#define YYNTOKENS  25
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  6
+#define YYNNTS  12
 /* YYNRULES -- Number of rules.  */
-#define YYNRULES  21
+#define YYNRULES  30
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  42
+#define YYNSTATES  58
 
 /* YYMAXUTOK -- Last valid token kind.  */
-#define YYMAXUTOK   275
+#define YYMAXUTOK   279
 
 
 /* YYTRANSLATE(TOKEN-NUM) -- Symbol number corresponding to TOKEN-NUM
@@ -496,16 +506,17 @@ static const yytype_int8 yytranslate[] =
        2,     2,     2,     2,     2,     2,     2,     2,     2,     2,
        2,     2,     2,     2,     2,     2,     1,     2,     3,     4,
        5,     6,     7,     8,     9,    10,    11,    12,    13,    14,
-      15,    16,    17,    18,    19,    20
+      15,    16,    17,    18,    19,    20,    21,    22,    23,    24
 };
 
 #if YYDEBUG
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
-static const yytype_int8 yyrline[] =
+static const yytype_uint8 yyrline[] =
 {
-       0,    24,    24,    27,    34,    37,    41,    45,    52,    58,
-      63,    68,    73,    78,    83,    88,    93,    98,   103,   108,
-     109,   113
+       0,    27,    27,    30,    37,    40,    41,    42,    43,    44,
+      47,    53,    59,    66,    69,    71,    77,    84,    90,    95,
+     100,   105,   110,   115,   120,   125,   130,   135,   140,   141,
+     145
 };
 #endif
 
@@ -522,9 +533,11 @@ static const char *yysymbol_name (yysymbol_kind_t yysymbol) YY_ATTRIBUTE_UNUSED;
 static const char *const yytname[] =
 {
   "\"end of file\"", "error", "\"invalid token\"", "IDENT", "NUM", "SEMI",
-  "INT", "ASSIGN", "PRINT", "PLUS", "MINUS", "TIMES", "OVER", "EQ", "NE",
-  "LE", "LT", "GE", "GT", "LP", "RP", "$accept", "program", "statements",
-  "statement", "var", "expression", YY_NULLPTR
+  "INT", "ASSIGN", "PRINT", "IF", "ELSE", "PLUS", "MINUS", "TIMES", "OVER",
+  "EQ", "NE", "LE", "LT", "GE", "GT", "LP", "RP", "LC", "RC", "$accept",
+  "program", "statements", "statement", "print_statement",
+  "decl_statement", "assign_statement", "compound_statement",
+  "if_statement", "if_head", "var", "expression", YY_NULLPTR
 };
 
 static const char *
@@ -541,11 +554,11 @@ static const yytype_int16 yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
-     275
+     275,   276,   277,   278,   279
 };
 #endif
 
-#define YYPACT_NINF (-12)
+#define YYPACT_NINF (-26)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -559,11 +572,12 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int8 yypact[] =
 {
-      54,   -12,    -2,    -1,     7,    54,   -12,    13,    16,   -12,
-     -12,    -1,    14,   -12,   -12,    -1,   -12,    38,   -12,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    28,
-     -12,    -6,    -6,   -12,   -12,    55,    55,    55,    55,    55,
-      55,   -12
+       2,   -26,     9,    -1,   -12,     2,    18,     2,   -26,   -26,
+     -26,   -26,   -26,   -26,    13,    12,    22,   -26,   -26,    -1,
+      40,    -1,    -2,   -26,   -26,    11,    -1,   -26,    66,   -26,
+      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,
+      78,   -26,   -26,    56,   -26,    19,    19,   -26,   -26,     3,
+       3,     3,     3,     3,     3,    11,   -26,   -26
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -571,23 +585,26 @@ static const yytype_int8 yypact[] =
      means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       0,     8,     0,     0,     0,     2,     4,     0,     0,    21,
-      20,     0,     0,     1,     3,     0,     6,     0,     5,     0,
+       0,    17,     0,     0,     0,     0,     0,     2,     4,     5,
+       6,     7,     8,     9,    14,     0,     0,    30,    29,     0,
+       0,     0,     0,     1,     3,     0,     0,    11,     0,    10,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
-      19,    15,    16,    17,    18,     9,    10,    14,    13,    12,
-      11,     7
+       0,    13,    15,     0,    28,    24,    25,    26,    27,    18,
+      19,    23,    22,    21,    20,     0,    12,    16
 };
 
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -12,   -12,   -12,    17,    32,   -11
+     -26,   -26,    24,     6,   -26,   -26,   -26,   -25,   -26,   -26,
+      44,     5
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     4,     5,     6,     7,    12
+      -1,     6,     7,     8,     9,    10,    11,    12,    13,    14,
+      15,    20
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -595,51 +612,62 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      17,     1,     9,    10,    29,    21,    22,    13,    31,    32,
-      33,    34,    35,    36,    37,    38,    39,    40,    11,    18,
-      15,    16,    14,    19,    20,    21,    22,    23,    24,    25,
-      26,    27,    28,    41,     8,     0,     0,    19,    20,    21,
-      22,    23,    24,    25,    26,    27,    28,    19,    20,    21,
-      22,    23,    24,    25,    26,    27,    28,     1,    30,     0,
-       2,     0,     3,     0,    19,    20,    21,    22
+      42,     1,    17,    18,     2,     1,     3,     4,     2,    21,
+       3,     4,     1,    24,    30,    31,    32,    33,    23,    26,
+      19,     5,    41,    25,    28,     5,    40,    27,    24,    22,
+      57,    43,    32,    33,     5,    45,    46,    47,    48,    49,
+      50,    51,    52,    53,    54,    29,    16,     0,     0,     0,
+       0,    30,    31,    32,    33,    34,    35,    36,    37,    38,
+      39,    56,     0,     0,     0,     0,     0,    30,    31,    32,
+      33,    34,    35,    36,    37,    38,    39,    30,    31,    32,
+      33,    34,    35,    36,    37,    38,    39,     0,    44,    30,
+      31,    32,    33,    34,    35,    36,    37,    38,    39,     0,
+      55
 };
 
 static const yytype_int8 yycheck[] =
 {
-      11,     3,     3,     4,    15,    11,    12,     0,    19,    20,
-      21,    22,    23,    24,    25,    26,    27,    28,    19,     5,
-       7,     5,     5,     9,    10,    11,    12,    13,    14,    15,
-      16,    17,    18,     5,     2,    -1,    -1,     9,    10,    11,
-      12,    13,    14,    15,    16,    17,    18,     9,    10,    11,
-      12,    13,    14,    15,    16,    17,    18,     3,    20,    -1,
-       6,    -1,     8,    -1,     9,    10,    11,    12
+      25,     3,     3,     4,     6,     3,     8,     9,     6,    21,
+       8,     9,     3,     7,    11,    12,    13,    14,     0,     7,
+      21,    23,    24,    10,    19,    23,    21,     5,    22,     5,
+      55,    26,    13,    14,    23,    30,    31,    32,    33,    34,
+      35,    36,    37,    38,    39,     5,     2,    -1,    -1,    -1,
+      -1,    11,    12,    13,    14,    15,    16,    17,    18,    19,
+      20,     5,    -1,    -1,    -1,    -1,    -1,    11,    12,    13,
+      14,    15,    16,    17,    18,    19,    20,    11,    12,    13,
+      14,    15,    16,    17,    18,    19,    20,    -1,    22,    11,
+      12,    13,    14,    15,    16,    17,    18,    19,    20,    -1,
+      22
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
      symbol of state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,     3,     6,     8,    22,    23,    24,    25,    25,     3,
-       4,    19,    26,     0,    24,     7,     5,    26,     5,     9,
-      10,    11,    12,    13,    14,    15,    16,    17,    18,    26,
-      20,    26,    26,    26,    26,    26,    26,    26,    26,    26,
-      26,     5
+       0,     3,     6,     8,     9,    23,    26,    27,    28,    29,
+      30,    31,    32,    33,    34,    35,    35,     3,     4,    21,
+      36,    21,    27,     0,    28,    10,     7,     5,    36,     5,
+      11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
+      36,    24,    32,    36,    22,    36,    36,    36,    36,    36,
+      36,    36,    36,    36,    36,    22,     5,    32
 };
 
   /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    21,    22,    23,    23,    24,    24,    24,    25,    26,
-      26,    26,    26,    26,    26,    26,    26,    26,    26,    26,
-      26,    26
+       0,    25,    26,    27,    27,    28,    28,    28,    28,    28,
+      29,    30,    31,    32,    33,    33,    34,    35,    36,    36,
+      36,    36,    36,    36,    36,    36,    36,    36,    36,    36,
+      36
 };
 
   /* YYR2[YYN] -- Number of symbols on the right hand side of rule YYN.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     1,     2,     1,     3,     3,     4,     1,     3,
-       3,     3,     3,     3,     3,     3,     3,     3,     3,     3,
-       1,     1
+       0,     2,     1,     2,     1,     1,     1,     1,     1,     1,
+       3,     3,     4,     3,     1,     3,     5,     1,     3,     3,
+       3,     3,     3,     3,     3,     3,     3,     3,     3,     1,
+       1
 };
 
 
@@ -1107,175 +1135,234 @@ yyreduce:
   switch (yyn)
     {
   case 2: /* program: statements  */
-#line 24 "parse.y"
+#line 27 "parse.y"
                      { syntaxTree = yyvsp[0]; }
-#line 1113 "parse.c"
+#line 1141 "parse.c"
     break;
 
   case 3: /* statements: statements statement  */
-#line 28 "parse.y"
+#line 31 "parse.y"
              { YYSTYPE t = yyvsp[-1];
                while (t->sibling)
                  t = t->sibling;
                t->sibling = yyvsp[0];
                yyval = yyvsp[-1];
              }
-#line 1124 "parse.c"
+#line 1152 "parse.c"
     break;
 
   case 4: /* statements: statement  */
-#line 34 "parse.y"
+#line 37 "parse.y"
                        { yyval = yyvsp[0]; }
-#line 1130 "parse.c"
+#line 1158 "parse.c"
     break;
 
-  case 5: /* statement: PRINT expression SEMI  */
-#line 38 "parse.y"
-            { yyval = mkTreeNode(PRINT);
-              yyval->children[0] = yyvsp[-1];
-            }
-#line 1138 "parse.c"
+  case 5: /* statement: print_statement  */
+#line 40 "parse.y"
+                               { yyval = yyvsp[0]; }
+#line 1164 "parse.c"
     break;
 
-  case 6: /* statement: INT var SEMI  */
+  case 6: /* statement: decl_statement  */
+#line 41 "parse.y"
+                               { yyval = yyvsp[0]; }
+#line 1170 "parse.c"
+    break;
+
+  case 7: /* statement: assign_statement  */
 #line 42 "parse.y"
-            { yyval = mkTreeNode(INT);
-              yyval->children[0] = yyvsp[-1];
-            }
-#line 1146 "parse.c"
+                               { yyval = yyvsp[0]; }
+#line 1176 "parse.c"
     break;
 
-  case 7: /* statement: var ASSIGN expression SEMI  */
-#line 46 "parse.y"
-            { yyval = mkTreeNode(ASSIGN);
-              yyval->children[0] = yyvsp[-3];
-              yyval->children[1] = yyvsp[-1];
-            }
-#line 1155 "parse.c"
+  case 8: /* statement: compound_statement  */
+#line 43 "parse.y"
+                               { yyval = yyvsp[0]; }
+#line 1182 "parse.c"
     break;
 
-  case 8: /* var: IDENT  */
-#line 53 "parse.y"
+  case 9: /* statement: if_statement  */
+#line 44 "parse.y"
+                               { yyval = yyvsp[0]; }
+#line 1188 "parse.c"
+    break;
+
+  case 10: /* print_statement: PRINT expression SEMI  */
+#line 48 "parse.y"
+                  { yyval = mkTreeNode(PRINT);
+                    yyval->children[0] = yyvsp[-1];
+                  }
+#line 1196 "parse.c"
+    break;
+
+  case 11: /* decl_statement: INT var SEMI  */
+#line 54 "parse.y"
+                 { yyval = mkTreeNode(INT);
+                   yyval->children[0] = yyvsp[-1];
+                 }
+#line 1204 "parse.c"
+    break;
+
+  case 12: /* assign_statement: var ASSIGN expression SEMI  */
+#line 60 "parse.y"
+                   { yyval = mkTreeNode(ASSIGN);
+                     yyval->children[0] = yyvsp[-3];
+                     yyval->children[1] = yyvsp[-1];
+                   }
+#line 1213 "parse.c"
+    break;
+
+  case 13: /* compound_statement: LC statements RC  */
+#line 66 "parse.y"
+                                      { yyval = yyvsp[-1]; }
+#line 1219 "parse.c"
+    break;
+
+  case 14: /* if_statement: if_head  */
+#line 70 "parse.y"
+               { yyval = yyvsp[0]; }
+#line 1225 "parse.c"
+    break;
+
+  case 15: /* if_statement: if_head ELSE compound_statement  */
+#line 72 "parse.y"
+               { yyval = yyvsp[-2];
+                 yyval->children[2] = yyvsp[0];
+               }
+#line 1233 "parse.c"
+    break;
+
+  case 16: /* if_head: IF LP expression RP compound_statement  */
+#line 78 "parse.y"
+          { yyval = mkTreeNode(IF);
+            yyval->children[0] = yyvsp[-2];
+            yyval->children[1] = yyvsp[0];
+          }
+#line 1242 "parse.c"
+    break;
+
+  case 17: /* var: IDENT  */
+#line 85 "parse.y"
       { yyval = mkTreeNode(IDENT);
         yyval->attr.id = findIdent(Tok.text);
       }
-#line 1163 "parse.c"
+#line 1250 "parse.c"
     break;
 
-  case 9: /* expression: expression EQ expression  */
-#line 59 "parse.y"
+  case 18: /* expression: expression EQ expression  */
+#line 91 "parse.y"
              { yyval = mkTreeNode(EQ);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1172 "parse.c"
+#line 1259 "parse.c"
     break;
 
-  case 10: /* expression: expression NE expression  */
-#line 64 "parse.y"
+  case 19: /* expression: expression NE expression  */
+#line 96 "parse.y"
              { yyval = mkTreeNode(NE);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1181 "parse.c"
+#line 1268 "parse.c"
     break;
 
-  case 11: /* expression: expression GT expression  */
-#line 69 "parse.y"
+  case 20: /* expression: expression GT expression  */
+#line 101 "parse.y"
              { yyval = mkTreeNode(GT);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1190 "parse.c"
+#line 1277 "parse.c"
     break;
 
-  case 12: /* expression: expression GE expression  */
-#line 74 "parse.y"
+  case 21: /* expression: expression GE expression  */
+#line 106 "parse.y"
              { yyval = mkTreeNode(GE);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1199 "parse.c"
+#line 1286 "parse.c"
     break;
 
-  case 13: /* expression: expression LT expression  */
-#line 79 "parse.y"
+  case 22: /* expression: expression LT expression  */
+#line 111 "parse.y"
              { yyval = mkTreeNode(LT);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1208 "parse.c"
+#line 1295 "parse.c"
     break;
 
-  case 14: /* expression: expression LE expression  */
-#line 84 "parse.y"
+  case 23: /* expression: expression LE expression  */
+#line 116 "parse.y"
              { yyval = mkTreeNode(LE);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1217 "parse.c"
+#line 1304 "parse.c"
     break;
 
-  case 15: /* expression: expression PLUS expression  */
-#line 89 "parse.y"
+  case 24: /* expression: expression PLUS expression  */
+#line 121 "parse.y"
              { yyval = mkTreeNode(PLUS);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1226 "parse.c"
+#line 1313 "parse.c"
     break;
 
-  case 16: /* expression: expression MINUS expression  */
-#line 94 "parse.y"
+  case 25: /* expression: expression MINUS expression  */
+#line 126 "parse.y"
              { yyval = mkTreeNode(MINUS);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1235 "parse.c"
+#line 1322 "parse.c"
     break;
 
-  case 17: /* expression: expression TIMES expression  */
-#line 99 "parse.y"
+  case 26: /* expression: expression TIMES expression  */
+#line 131 "parse.y"
              { yyval = mkTreeNode(TIMES);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1244 "parse.c"
+#line 1331 "parse.c"
     break;
 
-  case 18: /* expression: expression OVER expression  */
-#line 104 "parse.y"
+  case 27: /* expression: expression OVER expression  */
+#line 136 "parse.y"
              { yyval = mkTreeNode(OVER);
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1253 "parse.c"
+#line 1340 "parse.c"
     break;
 
-  case 19: /* expression: LP expression RP  */
-#line 108 "parse.y"
+  case 28: /* expression: LP expression RP  */
+#line 140 "parse.y"
                               { yyval = yyvsp[-1]; }
-#line 1259 "parse.c"
+#line 1346 "parse.c"
     break;
 
-  case 20: /* expression: NUM  */
-#line 110 "parse.y"
+  case 29: /* expression: NUM  */
+#line 142 "parse.y"
              { yyval = mkTreeNode(NUM);
                yyval->attr.val = Tok.intval;
              }
-#line 1267 "parse.c"
+#line 1354 "parse.c"
     break;
 
-  case 21: /* expression: IDENT  */
-#line 114 "parse.y"
+  case 30: /* expression: IDENT  */
+#line 146 "parse.y"
              { yyval = mkTreeNode(IDENT);
                yyval->attr.id = findIdent(Tok.text);
              }
-#line 1275 "parse.c"
+#line 1362 "parse.c"
     break;
 
 
-#line 1279 "parse.c"
+#line 1366 "parse.c"
 
       default: break;
     }
@@ -1469,7 +1556,7 @@ yyreturn:
   return yyresult;
 }
 
-#line 119 "parse.y"
+#line 151 "parse.y"
 
 
 int yylex() {

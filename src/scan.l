@@ -15,6 +15,8 @@
 
 "int"                  { return INT;     }
 "print"                { return PRINT;   }
+"if"                   { return IF;      }
+"else"                 { return ELSE;    }
 "=="                   { return EQ;      }
 "!="                   { return NE;      }
 ">"                    { return GT;      }
@@ -29,6 +31,8 @@
 ";"                    { return SEMI;    }
 "("                    { return LP;      }
 ")"                    { return RP;      }
+"{"                    { return LC;      }
+"}"                    { return RC;      }
 [ \t\n]+               { /* skip */      }
 [0-9]+                 { return NUM;     }
 [a-zA-Z_][a-zA-Z0-9_]* { return IDENT;   }

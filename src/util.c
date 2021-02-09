@@ -38,6 +38,24 @@ void printToken(int tok) {
     case INT:
       fprintf(Outfile, "int\n");
       break;
+    case IF:
+      fprintf(Outfile, "if\n");
+      break;
+    case ELSE:
+      fprintf(Outfile, "else\n");
+      break;
+    case LP:
+      fprintf(Outfile, "lp\n");
+      break;
+    case RP:
+      fprintf(Outfile, "rp\n");
+      break;
+    case LC:
+      fprintf(Outfile, "lc\n");
+      break;
+    case RC:
+      fprintf(Outfile, "rc\n");
+      break;
     case ASSIGN:
       fprintf(Outfile, "assign\n");
       break;

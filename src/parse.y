@@ -11,13 +11,16 @@
 %}
 
 %define api.value.type { TreeNode * }
-%token IDENT NUM SEMI INT ASSIGN PRINT
+%token IDENT NUM SEMI INT ASSIGN PRINT IF ELSE
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
-%token LP RP
+%token LP RP LC RC
 %left EQ NE LE LT GE GT
 %left PLUS MINUS
 %left TIMES OVER
+/* solve dangling else problem, prefer shift to reduce */
+%precedence RP
+%precedence ELSE
 
 %%
 
@@ -34,20 +37,49 @@ statements : statements statement
            | statement { $$ = $1; }
            ;
 
-statement : PRINT expression SEMI
-            { $$ = mkTreeNode(PRINT);
-              $$->children[0] = $2;
-            }
-          | INT var SEMI
-            { $$ = mkTreeNode(INT);
-              $$->children[0] = $2;
-            }
-          | var ASSIGN expression SEMI
-            { $$ = mkTreeNode(ASSIGN);
-              $$->children[0] = $1;
-              $$->children[1] = $3;
-            }
+statement : print_statement    { $$ = $1; }
+          | decl_statement     { $$ = $1; }
+          | assign_statement   { $$ = $1; }
+          | compound_statement { $$ = $1; }
+          | if_statement       { $$ = $1; }
           ;
+
+print_statement : PRINT expression SEMI
+                  { $$ = mkTreeNode(PRINT);
+                    $$->children[0] = $2;
+                  }
+                ;
+
+decl_statement : INT var SEMI
+                 { $$ = mkTreeNode(INT);
+                   $$->children[0] = $2;
+                 }
+               ;
+
+assign_statement : var ASSIGN expression SEMI
+                   { $$ = mkTreeNode(ASSIGN);
+                     $$->children[0] = $1;
+                     $$->children[1] = $3;
+                   }
+                 ;
+
+compound_statement : LC statements RC { $$ = $2; }
+                   ;
+
+if_statement : if_head
+               { $$ = $1; }
+             | if_head ELSE compound_statement
+               { $$ = $1;
+                 $$->children[2] = $3;
+               }
+             ;
+
+if_head : IF LP expression RP compound_statement
+          { $$ = mkTreeNode(IF);
+            $$->children[0] = $3;
+            $$->children[1] = $5;
+          }
+        ;
 
 var : IDENT
       { $$ = mkTreeNode(IDENT);

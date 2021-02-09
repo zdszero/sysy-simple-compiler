@@ -6,8 +6,8 @@
 #include <stdlib.h>
 
 #define TEST_SCAN 0
-#define TEST_PARSE 0
-#define TEST_CODEGEN 1
+#define TEST_PARSE 1
+#define TEST_CODEGEN 0
 
 FILE *Infile, *Outfile;
 
