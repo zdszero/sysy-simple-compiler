@@ -466,7 +466,7 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  9
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   182
+#define YYLAST   197
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  30
@@ -573,7 +573,7 @@ static const yytype_int16 yytoknum[] =
 };
 #endif
 
-#define YYPACT_NINF (-42)
+#define YYPACT_NINF (-31)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -587,16 +587,16 @@ static const yytype_int16 yytoknum[] =
      STATE-NUM.  */
 static const yytype_int16 yypact[] =
 {
-       5,   -42,   -42,     6,     5,   -42,   -42,   -42,    42,   -42,
-     -42,    24,    29,     4,   -42,    15,    23,   -42,   -42,    15,
-      73,    51,   -42,   121,   -42,    15,    15,    15,    15,    15,
-      15,    15,    15,    15,    15,    61,   -42,    15,    46,    47,
-      48,   -42,    63,    20,   -42,   -42,   -42,   -42,   -42,    70,
-     -42,   -42,   -42,    74,    92,   -42,    21,    21,   -42,   -42,
-      26,    26,    26,    26,    26,    26,   157,    15,    15,    51,
-     -42,   -42,   -42,    23,    15,   -42,   133,   145,    60,   -42,
-     111,    23,    23,    63,   -42,   -42,   -42,    56,    76,    23,
-      15,   -42,   157
+      37,   -31,   -31,     5,    37,   -31,   -31,   -31,    -4,   -31,
+     -31,   -31,    29,   -31,    25,     8,   -31,   -31,    25,    88,
+      10,   136,   -31,    25,    25,    25,    25,    25,    25,    25,
+      25,    25,    25,    75,   -31,   -31,    14,    14,   -31,   -31,
+      50,    50,    50,    50,    50,    50,    35,   -31,    25,    23,
+      31,    36,   -31,    -4,    16,   -31,   -31,   -31,   -31,   -31,
+      52,   -31,   -31,   -31,    53,   107,   172,    25,    25,    75,
+      51,   -31,   -31,    10,    25,   -31,   148,   160,     1,   -31,
+     126,    10,    10,    -4,   -31,   -31,   -31,    43,    63,    10,
+      25,   -31,   172
 };
 
   /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -605,13 +605,13 @@ static const yytype_int16 yypact[] =
 static const yytype_int8 yydefact[] =
 {
        0,    10,    11,     0,     2,     4,     5,     6,     0,     1,
-       3,    33,     0,     0,     7,     0,     0,    46,    45,     0,
-       0,     0,     9,     0,     8,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,    46,    32,     0,     0,     0,
-       0,    14,     0,     0,    13,    15,    16,    17,    18,    25,
-      19,    20,    21,     0,     0,    44,    40,    41,    42,    43,
-      34,    35,    39,    38,    37,    36,    22,     0,     0,     0,
-      33,    24,    12,     0,     0,    31,     0,     0,     0,    26,
+       3,    33,     0,     7,     0,     0,    46,    45,     0,     0,
+       0,     0,     8,     0,     0,     0,     0,     0,     0,     0,
+       0,     0,     0,     0,     9,    44,    40,    41,    42,    43,
+      34,    35,    39,    38,    37,    36,    46,    32,     0,     0,
+       0,     0,    14,     0,     0,    13,    15,    16,    17,    18,
+      25,    19,    20,    21,     0,     0,    22,     0,     0,     0,
+       0,    24,    12,     0,     0,    31,     0,     0,     0,    26,
        0,     0,     0,     0,    23,    27,    28,     0,     0,     0,
        0,    29,    30
 };
@@ -619,15 +619,15 @@ static const yytype_int8 yydefact[] =
   /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -42,   -42,   -42,    81,     3,   -42,    34,   -42,   -41,   -42,
-     -42,   -11,   -42,   -42,   -42,   -42,   -42,     9,    -7,   -15
+     -31,   -31,   -31,    69,    46,   -31,    48,   -31,   -30,   -31,
+     -31,   -17,   -31,   -31,   -31,   -31,   -31,    -3,    -6,   -14
 };
 
   /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-      -1,     3,     4,     5,    41,     7,    42,    43,    44,    45,
-      46,    47,    48,    49,    50,    51,    87,    52,    53,    54
+      -1,     3,     4,     5,    52,     7,    53,    54,    55,    56,
+      57,    58,    59,    60,    61,    62,    87,    63,    64,    65
 };
 
   /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -635,48 +635,50 @@ static const yytype_int8 yydefgoto[] =
      number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_int8 yytable[] =
 {
-      20,    12,    72,     6,    23,    22,     9,     6,     1,     2,
-      56,    57,    58,    59,    60,    61,    62,    63,    64,    65,
-      17,    18,    66,     1,     2,    35,    18,    36,    78,    37,
-      38,    16,    39,    40,     8,    12,    14,    15,     8,    27,
-      28,    19,    25,    26,    27,    28,    19,    11,    21,    71,
-      13,    21,    76,    77,     1,     2,    35,    18,    36,    80,
-      37,    38,    79,    39,    40,    17,    18,    36,    70,   -33,
-      85,    86,    67,    68,    69,    92,    88,    19,    91,    21,
-      24,    73,    74,    89,    90,    10,    19,    83,     0,    25,
-      26,    27,    28,    29,    30,    31,    32,    33,    34,    75,
-       0,     0,     0,     0,     0,     0,     0,     0,    25,    26,
-      27,    28,    29,    30,    31,    32,    33,    34,    84,     0,
-       0,     0,     0,     0,     0,     0,     0,    25,    26,    27,
-      28,    29,    30,    31,    32,    33,    34,    25,    26,    27,
-      28,    29,    30,    31,    32,    33,    34,     0,    55,    25,
-      26,    27,    28,    29,    30,    31,    32,    33,    34,     0,
-      81,    25,    26,    27,    28,    29,    30,    31,    32,    33,
-      34,     0,    82,    25,    26,    27,    28,    29,    30,    31,
-      32,    33,    34
+      19,    11,    12,    34,    21,     9,    16,    17,    47,    36,
+      37,    38,    39,    40,    41,    42,    43,    44,    45,     1,
+       2,    46,    17,    47,    72,    48,    49,    18,    50,    51,
+      16,    17,    25,    26,    66,    20,    13,    14,    33,    78,
+       1,     2,    18,   -33,    33,    71,     6,    70,     8,    67,
+       6,    18,     8,    76,    77,    15,    79,    68,    13,    14,
+      80,    74,    69,    73,    85,    86,    23,    24,    25,    26,
+      89,    90,    91,    10,     0,    83,    92,    88,     1,     2,
+      46,    17,    47,     0,    48,    49,     0,    50,    51,     0,
+       0,     0,     0,     0,     0,    22,     0,     0,     0,     0,
+       0,    18,     0,    33,    23,    24,    25,    26,    27,    28,
+      29,    30,    31,    32,    75,     0,     0,     0,     0,     0,
+       0,     0,     0,    23,    24,    25,    26,    27,    28,    29,
+      30,    31,    32,    84,     0,     0,     0,     0,     0,     0,
+       0,     0,    23,    24,    25,    26,    27,    28,    29,    30,
+      31,    32,    23,    24,    25,    26,    27,    28,    29,    30,
+      31,    32,     0,    35,    23,    24,    25,    26,    27,    28,
+      29,    30,    31,    32,     0,    81,    23,    24,    25,    26,
+      27,    28,    29,    30,    31,    32,     0,    82,    23,    24,
+      25,    26,    27,    28,    29,    30,    31,    32
 };
 
 static const yytype_int8 yycheck[] =
 {
-      15,     8,    43,     0,    19,    16,     0,     4,     3,     4,
-      25,    26,    27,    28,    29,    30,    31,    32,    33,    34,
-       5,     6,    37,     3,     4,     5,     6,     7,    69,     9,
-      10,    27,    12,    13,     0,    42,     7,     8,     4,    18,
-      19,    26,    16,    17,    18,    19,    26,     5,    28,    29,
-      26,    28,    67,    68,     3,     4,     5,     6,     7,    74,
-       9,    10,    73,    12,    13,     5,     6,     7,     5,     8,
-      81,    82,    26,    26,    26,    90,    83,    26,    89,    28,
-       7,    11,     8,    27,     8,     4,    26,    78,    -1,    16,
-      17,    18,    19,    20,    21,    22,    23,    24,    25,     7,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    -1,    16,    17,
-      18,    19,    20,    21,    22,    23,    24,    25,     7,    -1,
-      -1,    -1,    -1,    -1,    -1,    -1,    -1,    16,    17,    18,
-      19,    20,    21,    22,    23,    24,    25,    16,    17,    18,
-      19,    20,    21,    22,    23,    24,    25,    -1,    27,    16,
-      17,    18,    19,    20,    21,    22,    23,    24,    25,    -1,
-      27,    16,    17,    18,    19,    20,    21,    22,    23,    24,
-      25,    -1,    27,    16,    17,    18,    19,    20,    21,    22,
-      23,    24,    25
+      14,     5,     8,    20,    18,     0,     5,     6,     7,    23,
+      24,    25,    26,    27,    28,    29,    30,    31,    32,     3,
+       4,     5,     6,     7,    54,     9,    10,    26,    12,    13,
+       5,     6,    18,    19,    48,    27,     7,     8,    28,    69,
+       3,     4,    26,     8,    28,    29,     0,    53,     0,    26,
+       4,    26,     4,    67,    68,    26,    73,    26,     7,     8,
+      74,     8,    26,    11,    81,    82,    16,    17,    18,    19,
+      27,     8,    89,     4,    -1,    78,    90,    83,     3,     4,
+       5,     6,     7,    -1,     9,    10,    -1,    12,    13,    -1,
+      -1,    -1,    -1,    -1,    -1,     7,    -1,    -1,    -1,    -1,
+      -1,    26,    -1,    28,    16,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,     7,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    -1,    16,    17,    18,    19,    20,    21,    22,
+      23,    24,    25,     7,    -1,    -1,    -1,    -1,    -1,    -1,
+      -1,    -1,    16,    17,    18,    19,    20,    21,    22,    23,
+      24,    25,    16,    17,    18,    19,    20,    21,    22,    23,
+      24,    25,    -1,    27,    16,    17,    18,    19,    20,    21,
+      22,    23,    24,    25,    -1,    27,    16,    17,    18,    19,
+      20,    21,    22,    23,    24,    25,    -1,    27,    16,    17,
+      18,    19,    20,    21,    22,    23,    24,    25
 };
 
   /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -684,13 +686,13 @@ static const yytype_int8 yycheck[] =
 static const yytype_int8 yystos[] =
 {
        0,     3,     4,    31,    32,    33,    34,    35,    36,     0,
-      33,     5,    48,    26,     7,     8,    27,     5,     6,    26,
-      49,    28,    41,    49,     7,    16,    17,    18,    19,    20,
-      21,    22,    23,    24,    25,     5,     7,     9,    10,    12,
-      13,    34,    36,    37,    38,    39,    40,    41,    42,    43,
-      44,    45,    47,    48,    49,    27,    49,    49,    49,    49,
-      49,    49,    49,    49,    49,    49,    49,    26,    26,    26,
-       5,    29,    38,    11,     8,     7,    49,    49,    38,    41,
+      33,     5,    48,     7,     8,    26,     5,     6,    26,    49,
+      27,    49,     7,    16,    17,    18,    19,    20,    21,    22,
+      23,    24,    25,    28,    41,    27,    49,    49,    49,    49,
+      49,    49,    49,    49,    49,    49,     5,     7,     9,    10,
+      12,    13,    34,    36,    37,    38,    39,    40,    41,    42,
+      43,    44,    45,    47,    48,    49,    49,    26,    26,    26,
+      48,    29,    38,    11,     8,     7,    49,    49,    38,    41,
       49,    27,    27,    47,     7,    41,    41,    46,    48,    27,
        8,    41,    49
 };
@@ -1403,7 +1405,7 @@ yyreduce:
   case 2: /* program: declaration_list  */
 #line 29 "parse.y"
                            { syntaxTree = yyvsp[0]; }
-#line 1407 "parse.c"
+#line 1409 "parse.c"
     break;
 
   case 3: /* declaration_list: declaration_list declaration  */
@@ -1414,25 +1416,25 @@ yyreduce:
                      t->sibling = yyvsp[0];
                      yyval = yyvsp[-1];
                    }
-#line 1418 "parse.c"
+#line 1420 "parse.c"
     break;
 
   case 4: /* declaration_list: declaration  */
 #line 39 "parse.y"
                                { yyval = yyvsp[0]; }
-#line 1424 "parse.c"
+#line 1426 "parse.c"
     break;
 
   case 5: /* declaration: var_declaraton  */
 #line 42 "parse.y"
                                { yyval = yyvsp[0]; }
-#line 1430 "parse.c"
+#line 1432 "parse.c"
     break;
 
   case 6: /* declaration: func_declaration  */
 #line 43 "parse.y"
                                { yyval = yyvsp[0]; }
-#line 1436 "parse.c"
+#line 1438 "parse.c"
     break;
 
   case 7: /* var_declaraton: type_specifier var SEMI  */
@@ -1440,7 +1442,7 @@ yyreduce:
                  { yyval = mkTreeNode(INT);
                    yyval->children[0] = yyvsp[-1];
                  }
-#line 1444 "parse.c"
+#line 1446 "parse.c"
     break;
 
   case 8: /* var_declaraton: type_specifier var ASSIGN expression SEMI  */
@@ -1449,16 +1451,28 @@ yyreduce:
                    yyval->children[0] = yyvsp[-3];
                    yyval->children[1] = yyvsp[-1];
                  }
-#line 1453 "parse.c"
+#line 1455 "parse.c"
     break;
 
-  case 9: /* func_declaration: type_specifier IDENT LP RP compound_statement  */
+  case 9: /* func_declaration: type_specifier var LP RP compound_statement  */
 #line 58 "parse.y"
                    { yyval = mkTreeNode(FUNC);
                      yyval->children[0] = yyvsp[-4];
                      yyval->children[1] = yyvsp[0];
                    }
-#line 1462 "parse.c"
+#line 1464 "parse.c"
+    break;
+
+  case 10: /* type_specifier: INT  */
+#line 64 "parse.y"
+                       { yyval = mkTreeNode(INT); }
+#line 1470 "parse.c"
+    break;
+
+  case 11: /* type_specifier: VOID  */
+#line 65 "parse.y"
+                       { yyval = mkTreeNode(VOID); }
+#line 1476 "parse.c"
     break;
 
   case 12: /* statements: statements statement  */
@@ -1469,61 +1483,61 @@ yyreduce:
                t->sibling = yyvsp[0];
                yyval = yyvsp[-1];
              }
-#line 1473 "parse.c"
+#line 1487 "parse.c"
     break;
 
   case 13: /* statements: statement  */
 #line 75 "parse.y"
                        { yyval = yyvsp[0]; }
-#line 1479 "parse.c"
+#line 1493 "parse.c"
     break;
 
   case 14: /* statement: var_declaraton  */
 #line 78 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1485 "parse.c"
+#line 1499 "parse.c"
     break;
 
   case 15: /* statement: print_statement  */
 #line 79 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1491 "parse.c"
+#line 1505 "parse.c"
     break;
 
   case 16: /* statement: assign_statement  */
 #line 80 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1497 "parse.c"
+#line 1511 "parse.c"
     break;
 
   case 17: /* statement: compound_statement  */
 #line 81 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1503 "parse.c"
+#line 1517 "parse.c"
     break;
 
   case 18: /* statement: if_statement  */
 #line 82 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1509 "parse.c"
+#line 1523 "parse.c"
     break;
 
   case 19: /* statement: while_statement  */
 #line 83 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1515 "parse.c"
+#line 1529 "parse.c"
     break;
 
   case 20: /* statement: for_statement  */
 #line 84 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1521 "parse.c"
+#line 1535 "parse.c"
     break;
 
   case 21: /* statement: expression_statement  */
 #line 85 "parse.y"
                                  { yyval = yyvsp[0]; }
-#line 1527 "parse.c"
+#line 1541 "parse.c"
     break;
 
   case 22: /* print_statement: PRINT expression  */
@@ -1531,7 +1545,7 @@ yyreduce:
                   { yyval = mkTreeNode(PRINT);
                     yyval->children[0] = yyvsp[0];
                   }
-#line 1535 "parse.c"
+#line 1549 "parse.c"
     break;
 
   case 23: /* assign_statement: var ASSIGN expression SEMI  */
@@ -1540,19 +1554,19 @@ yyreduce:
                      yyval->children[0] = yyvsp[-3];
                      yyval->children[1] = yyvsp[-1];
                    }
-#line 1544 "parse.c"
+#line 1558 "parse.c"
     break;
 
   case 24: /* compound_statement: LC statements RC  */
 #line 101 "parse.y"
                                       { yyval = yyvsp[-1]; }
-#line 1550 "parse.c"
+#line 1564 "parse.c"
     break;
 
   case 25: /* if_statement: if_head  */
 #line 105 "parse.y"
                { yyval = yyvsp[0]; }
-#line 1556 "parse.c"
+#line 1570 "parse.c"
     break;
 
   case 26: /* if_statement: if_head ELSE compound_statement  */
@@ -1560,7 +1574,7 @@ yyreduce:
                { yyval = yyvsp[-2];
                  yyval->children[2] = yyvsp[0];
                }
-#line 1564 "parse.c"
+#line 1578 "parse.c"
     break;
 
   case 27: /* if_head: IF LP expression RP compound_statement  */
@@ -1569,7 +1583,7 @@ yyreduce:
             yyval->children[0] = yyvsp[-2];
             yyval->children[1] = yyvsp[0];
           }
-#line 1573 "parse.c"
+#line 1587 "parse.c"
     break;
 
   case 28: /* while_statement: WHILE LP expression RP compound_statement  */
@@ -1578,7 +1592,7 @@ yyreduce:
                     yyval->children[0] = yyvsp[-2];
                     yyval->children[1] = yyvsp[0];
                   }
-#line 1582 "parse.c"
+#line 1596 "parse.c"
     break;
 
   case 29: /* for_statement: FOR LP statement expression_statement post_statement RP compound_statement  */
@@ -1591,7 +1605,7 @@ yyreduce:
                   yyval->children[1]->children[1]->children[0] = yyvsp[0];
                   yyval->children[1]->children[1]->children[1] = yyvsp[-2];
                 }
-#line 1595 "parse.c"
+#line 1609 "parse.c"
     break;
 
   case 30: /* post_statement: var ASSIGN expression  */
@@ -1600,19 +1614,19 @@ yyreduce:
                    yyval->children[0] = yyvsp[-2];
                    yyval->children[1] = yyvsp[0];
                  }
-#line 1604 "parse.c"
+#line 1618 "parse.c"
     break;
 
   case 31: /* expression_statement: expression SEMI  */
 #line 144 "parse.y"
                                        { /* skip */ }
-#line 1610 "parse.c"
+#line 1624 "parse.c"
     break;
 
   case 32: /* expression_statement: SEMI  */
 #line 145 "parse.y"
                             { /* skip */ }
-#line 1616 "parse.c"
+#line 1630 "parse.c"
     break;
 
   case 33: /* var: IDENT  */
@@ -1620,7 +1634,7 @@ yyreduce:
       { yyval = mkTreeNode(IDENT);
         yyval->attr.id = findIdent(Tok.text);
       }
-#line 1624 "parse.c"
+#line 1638 "parse.c"
     break;
 
   case 34: /* expression: expression EQ expression  */
@@ -1629,7 +1643,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1633 "parse.c"
+#line 1647 "parse.c"
     break;
 
   case 35: /* expression: expression NE expression  */
@@ -1638,7 +1652,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1642 "parse.c"
+#line 1656 "parse.c"
     break;
 
   case 36: /* expression: expression GT expression  */
@@ -1647,7 +1661,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1651 "parse.c"
+#line 1665 "parse.c"
     break;
 
   case 37: /* expression: expression GE expression  */
@@ -1656,7 +1670,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1660 "parse.c"
+#line 1674 "parse.c"
     break;
 
   case 38: /* expression: expression LT expression  */
@@ -1665,7 +1679,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1669 "parse.c"
+#line 1683 "parse.c"
     break;
 
   case 39: /* expression: expression LE expression  */
@@ -1674,7 +1688,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1678 "parse.c"
+#line 1692 "parse.c"
     break;
 
   case 40: /* expression: expression PLUS expression  */
@@ -1683,7 +1697,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1687 "parse.c"
+#line 1701 "parse.c"
     break;
 
   case 41: /* expression: expression MINUS expression  */
@@ -1692,7 +1706,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1696 "parse.c"
+#line 1710 "parse.c"
     break;
 
   case 42: /* expression: expression TIMES expression  */
@@ -1701,7 +1715,7 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1705 "parse.c"
+#line 1719 "parse.c"
     break;
 
   case 43: /* expression: expression OVER expression  */
@@ -1710,13 +1724,13 @@ yyreduce:
                yyval->children[0] = yyvsp[-2];
                yyval->children[1] = yyvsp[0];
              }
-#line 1714 "parse.c"
+#line 1728 "parse.c"
     break;
 
   case 44: /* expression: LP expression RP  */
 #line 204 "parse.y"
                               { yyval = yyvsp[-1]; }
-#line 1720 "parse.c"
+#line 1734 "parse.c"
     break;
 
   case 45: /* expression: NUM  */
@@ -1724,7 +1738,7 @@ yyreduce:
              { yyval = mkTreeNode(NUM);
                yyval->attr.val = Tok.intval;
              }
-#line 1728 "parse.c"
+#line 1742 "parse.c"
     break;
 
   case 46: /* expression: IDENT  */
@@ -1732,11 +1746,11 @@ yyreduce:
              { yyval = mkTreeNode(IDENT);
                yyval->attr.id = findIdent(Tok.text);
              }
-#line 1736 "parse.c"
+#line 1750 "parse.c"
     break;
 
 
-#line 1740 "parse.c"
+#line 1754 "parse.c"
 
       default: break;
     }

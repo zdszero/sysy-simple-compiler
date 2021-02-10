@@ -62,17 +62,22 @@ static void cg_preamble() {
     "\tnop\n"
     "\tleave\n"
     "\tret\n"
-    "\n"
-    "\t.globl\tmain\n"
-    "\t.type\tmain, @function\n"
-    "main:\n"
-    "\tpushq\t%rbp\n"
-    "\tmovq	%rsp, %rbp\n",
+    "\n",
     Outfile);
 }
 
+void cg_func_preamble(char *name) {
+  fprintf (Outfile,
+    "\t.globl\t%s\n"
+    "\t.type\t%s, @function\n"
+    "%s:\n"
+    "\tpushq\t%%rbp\n"
+    "\tmovq\t%%rsp,\t%%rbp\n",
+    name, name, name);
+}
+
 /* return 0 */
-static void cg_postamble() {
+static void cg_func_postamble() {
   fputs(
     "\tmovl $0, %eax\n"
     "\tpopq %rbp\n"
@@ -211,7 +216,11 @@ static int cg_eval(TreeNode *root) {
 static void genAST(TreeNode *root) {
   if (!root)
     return;
-  if (root->tok == INT) {
+  if (root->tok == FUNC) {
+    cg_func_preamble(getIdent(root->attr.id));
+    genAST(root->children[1]);
+    cg_func_postamble();
+  } else if (root->tok == INT) {
     int id = root->children[0]->attr.id;
     cg_globsym(id);
     if (root->children[1])
@@ -260,5 +269,4 @@ static void genAST(TreeNode *root) {
 void genCode(TreeNode *root) {
   cg_preamble();
   genAST(syntaxTree);
-  cg_postamble();
 }

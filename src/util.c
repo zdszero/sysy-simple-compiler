@@ -61,6 +61,8 @@ void printToken(int tok) {
       fprintf(Outfile, "id: %s\n", getIdent(tmp->attr.id));
     else
       fprintf(Outfile, "id\n");
+  }  else if (tok == FUNC) {
+    fprintf(Outfile, "func: %s\n", getIdent(tmp->attr.id));
   } else if (tok == NUM) {
     if (tmp)
       fprintf(Outfile, "num: %d\n", tmp->attr.val);

@@ -54,15 +54,15 @@ var_declaraton : type_specifier var SEMI
                  }
                ;
 
-func_declaration : type_specifier IDENT LP RP compound_statement
+func_declaration : type_specifier var LP RP compound_statement
                    { $$ = mkTreeNode(FUNC);
                      $$->children[0] = $1;
                      $$->children[1] = $5;
                    }
                  ;
 
-type_specifier : INT
-               | VOID
+type_specifier : INT   { $$ = mkTreeNode(INT); }
+               | VOID  { $$ = mkTreeNode(VOID); }
                ;
 
 statements : statements statement
