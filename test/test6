@@ -1,0 +1,11 @@
+int a = 3;
+int b = 5;
+if (a > 2) {
+    if (a > 4) {
+        print a + 10;
+    } else {
+        print a * 2;
+    }
+} else {
+    print b;
+}

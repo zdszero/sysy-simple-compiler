@@ -9,7 +9,14 @@
 static int regs[REGCOUNT];
 static char *reglist[REGCOUNT] = {"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi", "%r8", "%r9", "%r10", "%r11"};
 static char *breglist[REGCOUNT] = {"%al", "%bl", "%cl", "%dl", "%sil", "%dil", "%r8b", "%r9b", "%r10b", "%r11b"};
+static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
 enum {RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11};
+int labId = 1;
+
+static void cg_label() {
+  fprintf(Outfile, "L%d:\n", labId);
+  labId++;
+}
 
 static void freeall_regs() {
   for (int i = 0; i < REGCOUNT; i++)
@@ -138,22 +145,27 @@ static void cg_printint(int r) {
   free_reg(r);
 }
 
-void cg_globsym(int id) {
+static void cg_globsym(int id) {
   fprintf(Outfile, "\t.comm\t%s, 8\n", getIdent(id));
 }
 
-void cg_assign(int id, int r) {
+static void cg_assign(int id, int r) {
   fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdent(id));
   free_reg(r);
 }
 
 /* test the result of r1 - r2 */
-int cg_compare(int r1, int r2, char *how) {
+static int cg_compare(int r1, int r2, char *how) {
   fprintf(Outfile, "\tcmpq\t%s, %s\n", reglist[r2], reglist[r1]);
   fprintf(Outfile, "\t%s\t%s\n", how, breglist[r1]);
   fprintf(Outfile, "\tandq\t$255, %s\n", reglist[r1]);
   free_reg(r2);
   return r1;
+}
+
+static void cg_jump(int r, char *how) {
+  free_reg(r);
+  fprintf(Outfile, "\t%s\tL%d\n", how, labId);
 }
 
 static int cg_eval(TreeNode *root) {
@@ -208,6 +220,19 @@ static void genAST(TreeNode *root) {
   } else if (root->tok == PRINT) {
     int r = cg_eval(root->children[0]);
     cg_printint(r);
+  } else if (root->tok == IF) {
+    int cmpidx = root->children[0]->tok - EQ;
+    int r = cg_eval(root->children[0]);
+    cg_jump(r, cmplist[cmpidx]);
+    genAST(root->children[1]);
+    if (root->children[2]) {
+      fprintf(Outfile, "\tjmp\tL%d\n", labId+1);
+    }
+    cg_label();
+    if (root->children[2]) {
+      genAST(root->children[2]);
+      cg_label();
+    }
   }
   genAST(root->sibling);
 }

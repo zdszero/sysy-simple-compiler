@@ -1,9 +1,9 @@
 #! /bin/bash
 
-for file in $(ls .); do
+for file in $(ls ../test); do
   if [[ $file == test* ]]; then
     printf "file $file\n"
-    ./cm $file > out.s
+    ./cm ../test/$file > out.s
     cc -o out out.s
     ./out
   fi
