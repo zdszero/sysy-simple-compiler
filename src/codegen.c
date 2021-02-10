@@ -250,6 +250,9 @@ static void genAST(TreeNode *root) {
     genAST(root->children[1]);
     cg_jump(NULL, labId-1);
     cg_label();
+  } else if (root->tok == GLUE) {
+    genAST(root->children[0]);
+    genAST(root->children[1]);
   }
   genAST(root->sibling);
 }
