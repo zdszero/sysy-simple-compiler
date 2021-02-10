@@ -47,6 +47,12 @@ void printToken(int tok) {
     case WHILE:
       fprintf(Outfile, "while\n");
       break;
+    case FOR:
+      fprintf(Outfile, "for\n");
+      break;
+    case GLUE:
+      fprintf(Outfile, "glue\n");
+      break;
     case LP:
       fprintf(Outfile, "lp\n");
       break;

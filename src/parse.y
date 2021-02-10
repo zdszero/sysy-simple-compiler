@@ -11,7 +11,7 @@
 %}
 
 %define api.value.type { TreeNode * }
-%token IDENT NUM SEMI INT ASSIGN PRINT IF ELSE WHILE
+%token IDENT NUM SEMI INT ASSIGN PRINT IF ELSE WHILE FOR GLUE
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
 %token LP RP LC RC
@@ -37,15 +37,17 @@ statements : statements statement
            | statement { $$ = $1; }
            ;
 
-statement : print_statement    { $$ = $1; }
-          | decl_statement     { $$ = $1; }
-          | assign_statement   { $$ = $1; }
-          | compound_statement { $$ = $1; }
-          | if_statement       { $$ = $1; }
-          | while_statement    { $$ = $1; }
+statement : print_statement      { $$ = $1; }
+          | decl_statement       { $$ = $1; }
+          | assign_statement     { $$ = $1; }
+          | compound_statement   { $$ = $1; }
+          | if_statement         { $$ = $1; }
+          | while_statement      { $$ = $1; }
+          | for_statement        { $$ = $1; }
+          | expression_statement { $$ = $1; }
           ;
 
-print_statement : PRINT expression SEMI
+print_statement : PRINT expression
                   { $$ = mkTreeNode(PRINT);
                     $$->children[0] = $2;
                   }
@@ -93,6 +95,28 @@ while_statement : WHILE LP expression RP compound_statement
                     $$->children[1] = $5;
                   }
                 ;
+
+for_statement : FOR LP statement expression_statement post_statement RP compound_statement
+                { $$ = mkTreeNode(GLUE);
+                  $$->children[0] = $3;
+                  $$->children[1] = mkTreeNode(WHILE);
+                  $$->children[1]->children[0] = $4;
+                  $$->children[1]->children[1] = mkTreeNode(GLUE);
+                  $$->children[1]->children[1]->children[0] = $7;
+                  $$->children[1]->children[1]->children[1] = $5;
+                }
+              ;
+
+post_statement : var ASSIGN expression
+                 { $$ = mkTreeNode(ASSIGN);
+                   $$->children[0] = $1;
+                   $$->children[1] = $3;
+                 }
+               ;
+
+expression_statement : expression SEMI { /* skip */ }
+                     | SEMI { /* skip */ }
+                     ;
 
 var : IDENT
       { $$ = mkTreeNode(IDENT);

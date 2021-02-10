@@ -18,6 +18,7 @@
 "if"                   { return IF;      }
 "else"                 { return ELSE;    }
 "while"                { return WHILE;   }
+"for"                  { return FOR;     }
 "=="                   { return EQ;      }
 "!="                   { return NE;      }
 ">"                    { return GT;      }
