@@ -17,6 +17,7 @@
 "print"                { return PRINT;   }
 "if"                   { return IF;      }
 "else"                 { return ELSE;    }
+"while"                { return WHILE;   }
 "=="                   { return EQ;      }
 "!="                   { return NE;      }
 ">"                    { return GT;      }

@@ -44,6 +44,9 @@ void printToken(int tok) {
     case ELSE:
       fprintf(Outfile, "else\n");
       break;
+    case WHILE:
+      fprintf(Outfile, "while\n");
+      break;
     case LP:
       fprintf(Outfile, "lp\n");
       break;

@@ -11,7 +11,7 @@
 %}
 
 %define api.value.type { TreeNode * }
-%token IDENT NUM SEMI INT ASSIGN PRINT IF ELSE
+%token IDENT NUM SEMI INT ASSIGN PRINT IF ELSE WHILE
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
 %token LP RP LC RC
@@ -42,6 +42,7 @@ statement : print_statement    { $$ = $1; }
           | assign_statement   { $$ = $1; }
           | compound_statement { $$ = $1; }
           | if_statement       { $$ = $1; }
+          | while_statement    { $$ = $1; }
           ;
 
 print_statement : PRINT expression SEMI
@@ -85,6 +86,13 @@ if_head : IF LP expression RP compound_statement
             $$->children[1] = $5;
           }
         ;
+
+while_statement : WHILE LP expression RP compound_statement
+                  { $$ = mkTreeNode(WHILE);
+                    $$->children[0] = $3;
+                    $$->children[1] = $5;
+                  }
+                ;
 
 var : IDENT
       { $$ = mkTreeNode(IDENT);
