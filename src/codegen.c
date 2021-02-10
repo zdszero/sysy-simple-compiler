@@ -9,9 +9,10 @@
 static int regs[REGCOUNT];
 static char *reglist[REGCOUNT] = {"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi", "%r8", "%r9", "%r10", "%r11"};
 static char *breglist[REGCOUNT] = {"%al", "%bl", "%cl", "%dl", "%sil", "%dil", "%r8b", "%r9b", "%r10b", "%r11b"};
+static char *setlist[REGCOUNT] = {"sete", "setne", "setle", "setl", "setge", "setg"};
 static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
 enum {RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11};
-int labId = 1;
+static int labId = 1;
 
 static void cg_label() {
   fprintf(Outfile, "L%d:\n", labId);
@@ -155,17 +156,18 @@ static void cg_assign(int id, int r) {
 }
 
 /* test the result of r1 - r2 */
-static int cg_compare(int r1, int r2, char *how) {
+static int cg_compare(int r1, int r2) {
   fprintf(Outfile, "\tcmpq\t%s, %s\n", reglist[r2], reglist[r1]);
-  fprintf(Outfile, "\t%s\t%s\n", how, breglist[r1]);
-  fprintf(Outfile, "\tandq\t$255, %s\n", reglist[r1]);
   free_reg(r2);
   return r1;
 }
 
-static void cg_jump(int r, char *how) {
-  free_reg(r);
-  fprintf(Outfile, "\t%s\tL%d\n", how, labId);
+/* jump to labId if test failed */
+static void cg_jump(char *how, int labId) {
+  if (how)
+    fprintf(Outfile, "\t%s\tL%d\n", how, labId);
+  else
+    fprintf(Outfile, "\tjmp\tL%d\n", labId);
 }
 
 static int cg_eval(TreeNode *root) {
@@ -180,17 +182,17 @@ static int cg_eval(TreeNode *root) {
     case IDENT:
       return cg_loadglob(root->attr.id);
     case EQ:
-      return cg_compare(leftreg, rightreg, "sete");
+      return cg_compare(leftreg, rightreg);
     case NE:
-      return cg_compare(leftreg, rightreg, "setne");
+      return cg_compare(leftreg, rightreg);
     case GT:
-      return cg_compare(leftreg, rightreg, "setg");
+      return cg_compare(leftreg, rightreg);
     case GE:
-      return cg_compare(leftreg, rightreg, "setge");
+      return cg_compare(leftreg, rightreg);
     case LT:
-      return cg_compare(leftreg, rightreg, "setl");
+      return cg_compare(leftreg, rightreg);
     case LE:
-      return cg_compare(leftreg, rightreg, "setle");
+      return cg_compare(leftreg, rightreg);
     case PLUS:
       return cg_add(leftreg, rightreg);
     case MINUS:
@@ -216,6 +218,11 @@ static void genAST(TreeNode *root) {
       cg_assign(id, cg_eval(root->children[1]));
   } else if (root->tok == ASSIGN) {
     int r = cg_eval(root->children[1]);
+    int eval_tok = root->children[1]->tok;
+    if (eval_tok >= EQ && eval_tok <= GT) {
+      fprintf(Outfile, "\t%s\t%s\n",setlist[eval_tok-EQ] , breglist[r]);
+      fprintf(Outfile, "\tandq\t$255, %s\n", reglist[r]);
+    }
     cg_assign(root->children[0]->attr.id, r);
   } else if (root->tok == PRINT) {
     int r = cg_eval(root->children[0]);
@@ -223,16 +230,26 @@ static void genAST(TreeNode *root) {
   } else if (root->tok == IF) {
     int cmpidx = root->children[0]->tok - EQ;
     int r = cg_eval(root->children[0]);
-    cg_jump(r, cmplist[cmpidx]);
+    cg_jump(cmplist[cmpidx], labId);
+    free_reg(r);
     genAST(root->children[1]);
     if (root->children[2]) {
-      fprintf(Outfile, "\tjmp\tL%d\n", labId+1);
+      cg_jump(NULL, labId+1);
     }
     cg_label();
     if (root->children[2]) {
       genAST(root->children[2]);
       cg_label();
     }
+  } else if (root->tok == WHILE) {
+    cg_label();
+    int r = cg_eval(root->children[0]);
+    int cmpidx = root->children[0]->tok - EQ;
+    cg_jump(cmplist[cmpidx], labId);
+    free_reg(r);
+    genAST(root->children[1]);
+    cg_jump(NULL, labId-1);
+    cg_label();
   }
   genAST(root->sibling);
 }

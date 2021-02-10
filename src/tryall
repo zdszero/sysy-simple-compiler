@@ -2,7 +2,7 @@
 
 if [[ $# -eq 1 ]]; then
   file=$1
-  printf "file $file"
+  printf ">> file $file\n"
   ./cm ../test/$file > out.s
   cc -o out out.s
   ./out
@@ -11,7 +11,7 @@ fi
 
 for file in $(ls ../test); do
   if [[ $file == test* ]]; then
-    printf "file $file\n"
+    printf "\n>> file $file\n"
     ./cm ../test/$file > out.s
     cc -o out out.s
     ./out
