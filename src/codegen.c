@@ -198,7 +198,10 @@ static void genAST(TreeNode *root) {
   if (!root)
     return;
   if (root->tok == INT) {
-    cg_globsym(root->children[0]->attr.id);
+    int id = root->children[0]->attr.id;
+    cg_globsym(id);
+    if (root->children[1])
+      cg_assign(id, cg_eval(root->children[1]));
   } else if (root->tok == ASSIGN) {
     int r = cg_eval(root->children[1]);
     cg_assign(root->children[0]->attr.id, r);

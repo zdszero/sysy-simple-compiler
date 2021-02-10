@@ -54,6 +54,11 @@ decl_statement : INT var SEMI
                  { $$ = mkTreeNode(INT);
                    $$->children[0] = $2;
                  }
+               | INT var ASSIGN expression SEMI
+                 { $$ = mkTreeNode(INT);
+                   $$->children[0] = $2;
+                   $$->children[1] = $4;
+                 }
                ;
 
 assign_statement : var ASSIGN expression SEMI
