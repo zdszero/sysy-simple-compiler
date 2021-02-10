@@ -7,13 +7,14 @@
   #include <string.h>
   #define YY_DECL int scan_yylex(void)
   Token Tok;
-  static int lineno;
+  int lineno = 1;
   static int isFirstTime = 1;
 %}
 
 %%
 
 "int"                  { return INT;     }
+"void"                 { return VOID;    }
 "print"                { return PRINT;   }
 "if"                   { return IF;      }
 "else"                 { return ELSE;    }
@@ -35,7 +36,8 @@
 ")"                    { return RP;      }
 "{"                    { return LC;      }
 "}"                    { return RC;      }
-[ \t\n]+               { /* skip */      }
+\n                     { lineno++;       }
+[ \t]+                 { /* skip */      }
 [0-9]+                 { return NUM;     }
 [a-zA-Z_][a-zA-Z0-9_]* { return IDENT;   }
 <<EOF>>                { return YYEOF;   }

@@ -6,12 +6,14 @@
   #include <stdio.h>
   #include <ctype.h>
   int yylex();
-  void yyerror(char *msg);
+  void yyerror(const char *msg);
   TreeNode *syntaxTree;
 %}
 
 %define api.value.type { TreeNode * }
-%token IDENT NUM SEMI INT ASSIGN PRINT IF ELSE WHILE FOR GLUE
+%define parse.error detailed
+%token INT VOID IDENT NUM SEMI ASSIGN PRINT IF ELSE WHILE FOR
+%token GLUE FUNC
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
 %token LP RP LC RC
@@ -24,8 +26,44 @@
 
 %%
 
-program : statements { syntaxTree = $1; }
+program : declaration_list { syntaxTree = $1; }
         ;
+
+declaration_list : declaration_list declaration
+                   { YYSTYPE t = $1;
+                     while (t->sibling)
+                       t = t->sibling;
+                     t->sibling = $2;
+                     $$ = $1;
+                   }
+                 | declaration { $$ = $1; }
+                 ;
+
+declaration : var_declaraton   { $$ = $1; }
+            | func_declaration { $$ = $1; }
+            ;
+
+var_declaraton : type_specifier var SEMI
+                 { $$ = mkTreeNode(INT);
+                   $$->children[0] = $2;
+                 }
+               | type_specifier var ASSIGN expression SEMI
+                 { $$ = mkTreeNode(INT);
+                   $$->children[0] = $2;
+                   $$->children[1] = $4;
+                 }
+               ;
+
+func_declaration : type_specifier IDENT LP RP compound_statement
+                   { $$ = mkTreeNode(FUNC);
+                     $$->children[0] = $1;
+                     $$->children[1] = $5;
+                   }
+                 ;
+
+type_specifier : INT
+               | VOID
+               ;
 
 statements : statements statement
              { YYSTYPE t = $1;
@@ -37,8 +75,8 @@ statements : statements statement
            | statement { $$ = $1; }
            ;
 
-statement : print_statement      { $$ = $1; }
-          | decl_statement       { $$ = $1; }
+statement : var_declaraton       { $$ = $1; }
+          | print_statement      { $$ = $1; }
           | assign_statement     { $$ = $1; }
           | compound_statement   { $$ = $1; }
           | if_statement         { $$ = $1; }
@@ -52,17 +90,6 @@ print_statement : PRINT expression
                     $$->children[0] = $2;
                   }
                 ;
-
-decl_statement : INT var SEMI
-                 { $$ = mkTreeNode(INT);
-                   $$->children[0] = $2;
-                 }
-               | INT var ASSIGN expression SEMI
-                 { $$ = mkTreeNode(INT);
-                   $$->children[0] = $2;
-                   $$->children[1] = $4;
-                 }
-               ;
 
 assign_statement : var ASSIGN expression SEMI
                    { $$ = mkTreeNode(ASSIGN);
@@ -192,6 +219,6 @@ int yylex() {
   return Tok.token;
 }
 
-void yyerror(char *msg) {
-  fprintf(stderr, "%s\n", msg);
+void yyerror(const char *msg) {
+  fprintf(stderr, "%s in line %d\n", msg, lineno);
 }

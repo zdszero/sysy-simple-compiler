@@ -20,8 +20,10 @@ struct record {
 };
 
 struct record nameMap[] = {
-  {SEMI,   "semi"   },
+  {FUNC,   "func"   },
   {INT,    "int"    },
+  {VOID,   "void"   },
+  {SEMI,   "semi"   },
   {IF,     "if"     },
   {SEMI,   "semi"   },
   {ELSE,   "else"   },

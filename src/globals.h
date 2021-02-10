@@ -32,7 +32,7 @@ typedef struct token {
 } Token;
 
 extern FILE *Infile, *Outfile;
-extern int Putback;
+extern int lineno;
 extern Token Tok;
 extern SymRec SymTab[NSYMBOLS];
 extern TreeNode *syntaxTree;
