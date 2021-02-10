@@ -1,5 +1,14 @@
 #! /bin/bash
 
+if [[ $# -eq 1 ]]; then
+  file=$1
+  printf "file $file"
+  ./cm ../test/$file > out.s
+  cc -o out out.s
+  ./out
+  exit 1
+fi
+
 for file in $(ls ../test); do
   if [[ $file == test* ]]; then
     printf "file $file\n"
