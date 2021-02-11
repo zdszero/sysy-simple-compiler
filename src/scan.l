@@ -4,6 +4,7 @@
   #include "globals.h"
   #include "scan.h"
   #include <stdio.h>
+  #include <ctype.h>
   #include <string.h>
   #define YY_DECL int scan_yylex(void)
   Token Tok;
@@ -11,10 +12,13 @@
   static int isFirstTime = 1;
 %}
 
+quote \'
+
 %%
 
 "int"                  { return INT;     }
 "void"                 { return VOID;    }
+"char"                 { return CHAR;    }
 "print"                { return PRINT;   }
 "if"                   { return IF;      }
 "else"                 { return ELSE;    }
@@ -41,6 +45,14 @@
 [0-9]+                 { return NUM;     }
 [a-zA-Z_][a-zA-Z0-9_]* { return IDENT;   }
 <<EOF>>                { return YYEOF;   }
+{quote}                { char c;
+                         if (!isascii(c = input()))
+                           return YYUNDEF;
+                         if ((c = input()) != '\'')
+                           return YYUNDEF;
+                         Tok.text[0] = c;
+                         return CH;
+                       }
 .                      { return YYUNDEF; }
 
 %%

@@ -2,3 +2,5 @@
 cm
 out.s
 out
+parse.c
+scan.c

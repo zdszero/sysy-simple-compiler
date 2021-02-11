@@ -95,7 +95,7 @@ static int cg_loadnum(int value) {
 
 static int cg_loadglob(int id) {
   int r = allocate_reg();
-  fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", getIdent(id), reglist[r]);
+  fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", getIdentName(id), reglist[r]);
   return r;
 }
 
@@ -152,11 +152,11 @@ static void cg_printint(int r) {
 }
 
 static void cg_globsym(int id) {
-  fprintf(Outfile, "\t.comm\t%s, 8\n", getIdent(id));
+  fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
 }
 
 static void cg_assign(int id, int r) {
-  fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdent(id));
+  fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdentName(id));
   free_reg(r);
 }
 
@@ -217,7 +217,7 @@ static void genAST(TreeNode *root) {
   if (!root)
     return;
   if (root->tok == FUNC) {
-    cg_func_preamble(getIdent(root->attr.id));
+    cg_func_preamble(getIdentName(root->attr.id));
     genAST(root->children[0]);
     cg_func_postamble();
   } else if (root->tok == VAR) {

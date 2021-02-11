@@ -22,30 +22,33 @@ struct record {
 };
 
 struct record nameMap[] = {
-  {FUNC,   "func"   },
-  {INT,    "int"    },
-  {VOID,   "void"   },
-  {SEMI,   "semi"   },
-  {IF,     "if"     },
-  {SEMI,   "semi"   },
-  {ELSE,   "else"   },
-  {WHILE,  "while"  },
-  {FOR,    "for"    },
-  {GLUE,   "glue"   },
-  {LP,     "lp"     },
-  {RP,     "rp"     },
-  {LC,     "lc"     },
-  {RC,     "rc"     },
-  {ASSIGN, "assign" },
-  {PRINT,  "print"  },
-  {EQ,     "eq"     },
-  {NE,     "ne"     },
-  {GT,     "gt"     },
-  {GE,     "ge"     },
-  {LT,     "lt"     },
-  {LE,     "le"     },
-  {PLUS,   "minus"  },
-  {YYEOF,  "eof"    }
+  {FUNC,   "func"        },
+  {DECL,   "decl"        },
+  {INT,    "int"         },
+  {CHAR,   "char"        },
+  {CH,     "single char" },
+  {VOID,   "void"        },
+  {SEMI,   "semi"        },
+  {IF,     "if"          },
+  {SEMI,   "semi"        },
+  {ELSE,   "else"        },
+  {WHILE,  "while"       },
+  {FOR,    "for"         },
+  {GLUE,   "glue"        },
+  {LP,     "lp"          },
+  {RP,     "rp"          },
+  {LC,     "lc"          },
+  {RC,     "rc"          },
+  {ASSIGN, "assign"      },
+  {PRINT,  "print"       },
+  {EQ,     "eq"          },
+  {NE,     "ne"          },
+  {GT,     "gt"          },
+  {GE,     "ge"          },
+  {LT,     "lt"          },
+  {LE,     "le"          },
+  {PLUS,   "minus"       },
+  {YYEOF,  "eof"         }
 };
 
 char *getTokenName(int val) {
@@ -60,18 +63,16 @@ char *getTokenName(int val) {
 void printToken(int tok) {
   if (tok == IDENT) {
     if (tmp)
-      fprintf(Outfile, "id: %s\n", getIdent(tmp->attr.id));
+      fprintf(Outfile, "id: %s\n", getIdentName(tmp->attr.id));
     else
       fprintf(Outfile, "id\n");
   }  else if (tok == FUNC) {
-    fprintf(Outfile, "func: %s\n", getIdent(tmp->attr.id));
+    fprintf(Outfile, "func: %s\n", getIdentName(tmp->attr.id));
   } else if (tok == NUM) {
     if (tmp)
       fprintf(Outfile, "num: %d\n", tmp->attr.val);
     else
       fprintf(Outfile, "num\n");
-  } else if (tok == VAR) {
-    fprintf(Outfile, "var\n");
   } else {
     char *name = getTokenName(tok);
     if (name) {

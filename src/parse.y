@@ -1,20 +1,21 @@
 %{
   #include "globals.h"
+  #include "scan.h"
   #include "util.h"
   #include "symtab.h"
-  #include "scan.h"
+  #include "analyze.h"
   #include <stdio.h>
   #include <stdlib.h>
   #include <ctype.h>
   int yylex();
-  void yyerror(const char *msg);
+  void yyerror(const char *);
   TreeNode *syntaxTree;
 %}
 
 %define api.value.type { TreeNode * }
 %define parse.error detailed
-%token INT VOID IDENT NUM SEMI ASSIGN PRINT IF ELSE WHILE FOR
-%token GLUE FUNC VAR
+%token INT VOID CHAR IDENT NUM CH SEMI ASSIGN PRINT IF ELSE WHILE FOR
+%token GLUE FUNC DECL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
 %token LP RP LC RC
@@ -45,16 +46,16 @@ declaration : var_declaraton   { $$ = $1; }
             ;
 
 var_declaraton : type_specifier var SEMI
-                 { $$ = mkTreeNode(VAR);
-                   $$->type = $1->type;
+                 { $$ = mkTreeNode(DECL);
                    $2->type = $1->type;
                    free($1);
                    $$->children[0] = $2;
                  }
                | type_specifier var ASSIGN expression SEMI
-                 { $$ = mkTreeNode(VAR);
-                   $$->type = $1->type;
+                 { $$ = mkTreeNode(DECL);
                    $2->type = $1->type;
+                   typeCheck_Assign($2, $4);
+                   free($1);
                    $$->children[0] = $2;
                    $$->children[1] = $4;
                  }
@@ -70,6 +71,7 @@ func_declaration : type_specifier var LP RP compound_statement
 
 type_specifier : INT   { $$ = mkTreeNode(INT);  $$->type = T_Int;  }
                | VOID  { $$ = mkTreeNode(VOID); $$->type = T_Void; }
+               | CHAR  { $$ = mkTreeNode(CHAR); $$->type = T_Char; }
                ;
 
 statements : statements statement
@@ -98,7 +100,7 @@ print_statement : PRINT expression
                   }
                 ;
 
-assign_statement : var ASSIGN expression SEMI
+assign_statement : var_ref ASSIGN expression SEMI
                    { $$ = mkTreeNode(ASSIGN);
                      $$->children[0] = $1;
                      $$->children[1] = $3;
@@ -154,68 +156,108 @@ expression_statement : expression SEMI { /* skip */ }
 
 var : IDENT
       { $$ = mkTreeNode(IDENT);
-        $$->attr.id = findIdent(Tok.text);
+        if (getIdentId(Tok.text) == -1)
+          $$->attr.id = newIdent(Tok.text);
+        else {
+          fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
+          exit(1);
+        }
       }
     ;
 
+var_ref : IDENT
+          { $$ = mkTreeNode(IDENT);
+            int id = getIdentId(Tok.text);
+            if (id == -1) {
+              fprintf(Outfile, "Error: variable %s is referred before defination at line %d\n", Tok.text, lineno);
+              exit(1);
+            } else {
+              $$->attr.id = id;
+            }
+          }
+        ;
+
 expression : expression EQ expression
-             { $$ = mkTreeNode(EQ);
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(EQ);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression NE expression
-             { $$ = mkTreeNode(NE);
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(NE);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression GT expression
-             { $$ = mkTreeNode(GT);
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(GT);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression GE expression
-             { $$ = mkTreeNode(GE);
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(GE);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression LT expression
-             { $$ = mkTreeNode(LT);
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(LT);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression LE expression
-             { $$ = mkTreeNode(LE);
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(LE);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression PLUS expression
-             { $$ = mkTreeNode(PLUS);
+             { typeCheck_Calc($1, $3);
+               $$ = mkTreeNode(PLUS);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression MINUS expression
-             { $$ = mkTreeNode(MINUS);
+             { typeCheck_Calc($1, $3);
+               $$ = mkTreeNode(MINUS);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression TIMES expression
-             { $$ = mkTreeNode(TIMES);
+             { typeCheck_Calc($1, $3);
+               $$ = mkTreeNode(TIMES);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression OVER expression
-             { $$ = mkTreeNode(OVER);
+             { typeCheck_Calc($1, $3);
+               $$ = mkTreeNode(OVER);
+               $$->type = T_Int;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | LP expression RP { $$ = $2; }
            | NUM
              { $$ = mkTreeNode(NUM);
+               $$->type = T_Int;
                $$->attr.val = Tok.intval;
              }
-           | IDENT
-             { $$ = mkTreeNode(IDENT);
-               $$->attr.id = findIdent(Tok.text);
+           | var_ref { $$ = $1; }
+           | CH
+             { $$ = mkTreeNode(CH);
+               $$->type = T_Char;
+               $$->attr.ch = Tok.text[0];
              }
            ;
 

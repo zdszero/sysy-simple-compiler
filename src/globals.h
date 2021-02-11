@@ -21,17 +21,12 @@ typedef struct treeNode {
   /* attributes for leaf nodes */
   union {
     int val; // int value
-    int id; // identifier id in symtab
-    int op; // operator value
+    int id;  // identifier id in symtab
+    char ch; // char
   } attr;
 } TreeNode;
 
 #include "parse.h"
-
-typedef struct symRec {
-  char *name;
-  int type;
-} SymRec;
 
 typedef struct token {
   int intval;
@@ -42,7 +37,6 @@ typedef struct token {
 extern FILE *Infile, *Outfile;
 extern int lineno;
 extern Token Tok;
-extern SymRec SymTab[NSYMBOLS];
 extern TreeNode *syntaxTree;
 
 #endif
