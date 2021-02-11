@@ -67,20 +67,21 @@ extern int yydebug;
     FOR = 268,                     /* FOR  */
     GLUE = 269,                    /* GLUE  */
     FUNC = 270,                    /* FUNC  */
-    PLUS = 271,                    /* PLUS  */
-    MINUS = 272,                   /* MINUS  */
-    TIMES = 273,                   /* TIMES  */
-    OVER = 274,                    /* OVER  */
-    EQ = 275,                      /* EQ  */
-    NE = 276,                      /* NE  */
-    LE = 277,                      /* LE  */
-    LT = 278,                      /* LT  */
-    GE = 279,                      /* GE  */
-    GT = 280,                      /* GT  */
-    LP = 281,                      /* LP  */
-    RP = 282,                      /* RP  */
-    LC = 283,                      /* LC  */
-    RC = 284                       /* RC  */
+    VAR = 271,                     /* VAR  */
+    PLUS = 272,                    /* PLUS  */
+    MINUS = 273,                   /* MINUS  */
+    TIMES = 274,                   /* TIMES  */
+    OVER = 275,                    /* OVER  */
+    EQ = 276,                      /* EQ  */
+    NE = 277,                      /* NE  */
+    LE = 278,                      /* LE  */
+    LT = 279,                      /* LT  */
+    GE = 280,                      /* GE  */
+    GT = 281,                      /* GT  */
+    LP = 282,                      /* LP  */
+    RP = 283,                      /* RP  */
+    LC = 284,                      /* LC  */
+    RC = 285                       /* RC  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif

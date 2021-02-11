@@ -8,8 +8,10 @@ static TreeNode *tmp = NULL;
 TreeNode *mkTreeNode(int tok) {
   TreeNode *t = (TreeNode *)malloc(sizeof(TreeNode));
   t->tok = tok;
-  for (int i = 0; i < CHILDNUM; i++)
+  for (int i = 0; i < CHILDNUM; i++) {
     t->children[i] = NULL;
+    t->type = T_None;
+  }
   t->sibling = NULL;
   return t;
 }
@@ -68,6 +70,8 @@ void printToken(int tok) {
       fprintf(Outfile, "num: %d\n", tmp->attr.val);
     else
       fprintf(Outfile, "num\n");
+  } else if (tok == VAR) {
+    fprintf(Outfile, "var\n");
   } else {
     char *name = getTokenName(tok);
     if (name) {

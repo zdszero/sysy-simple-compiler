@@ -218,9 +218,9 @@ static void genAST(TreeNode *root) {
     return;
   if (root->tok == FUNC) {
     cg_func_preamble(getIdent(root->attr.id));
-    genAST(root->children[1]);
+    genAST(root->children[0]);
     cg_func_postamble();
-  } else if (root->tok == INT) {
+  } else if (root->tok == VAR) {
     int id = root->children[0]->attr.id;
     cg_globsym(id);
     if (root->children[1])

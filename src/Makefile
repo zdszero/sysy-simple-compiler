@@ -4,7 +4,7 @@ OBJS = main.o parse.o scan.o symtab.o util.o codegen.o
 
 cm: $(OBJS)
 	$(CC) -o $@ $(OBJS) $(CCFLAGS)
-main.o: globals.h parse.h util.h
+main.o: globals.h util.h
 scan.o: scan.c
 parse.o: parse.c
 symtab.o: globals.h symtab.h

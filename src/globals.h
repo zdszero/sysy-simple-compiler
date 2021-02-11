@@ -7,10 +7,17 @@
 
 #include <stdio.h>
 
+enum {
+  T_None, T_Int, T_Void, T_Char
+};
+
 typedef struct treeNode {
   struct treeNode *children[CHILDNUM];
   struct treeNode *sibling;
+  /* identify node type by tok attribute */
   int tok;
+  /* type specifier for decl and func node */
+  int type;
   /* attributes for leaf nodes */
   union {
     int val; // int value
@@ -23,6 +30,7 @@ typedef struct treeNode {
 
 typedef struct symRec {
   char *name;
+  int type;
 } SymRec;
 
 typedef struct token {

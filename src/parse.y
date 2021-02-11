@@ -4,6 +4,7 @@
   #include "symtab.h"
   #include "scan.h"
   #include <stdio.h>
+  #include <stdlib.h>
   #include <ctype.h>
   int yylex();
   void yyerror(const char *msg);
@@ -13,7 +14,7 @@
 %define api.value.type { TreeNode * }
 %define parse.error detailed
 %token INT VOID IDENT NUM SEMI ASSIGN PRINT IF ELSE WHILE FOR
-%token GLUE FUNC
+%token GLUE FUNC VAR
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
 %token LP RP LC RC
@@ -44,11 +45,16 @@ declaration : var_declaraton   { $$ = $1; }
             ;
 
 var_declaraton : type_specifier var SEMI
-                 { $$ = mkTreeNode(INT);
+                 { $$ = mkTreeNode(VAR);
+                   $$->type = $1->type;
+                   $2->type = $1->type;
+                   free($1);
                    $$->children[0] = $2;
                  }
                | type_specifier var ASSIGN expression SEMI
-                 { $$ = mkTreeNode(INT);
+                 { $$ = mkTreeNode(VAR);
+                   $$->type = $1->type;
+                   $2->type = $1->type;
                    $$->children[0] = $2;
                    $$->children[1] = $4;
                  }
@@ -56,13 +62,14 @@ var_declaraton : type_specifier var SEMI
 
 func_declaration : type_specifier var LP RP compound_statement
                    { $$ = mkTreeNode(FUNC);
-                     $$->children[0] = $1;
-                     $$->children[1] = $5;
+                     $$->type = $1->type;
+                     free($1);
+                     $$->children[0] = $5;
                    }
                  ;
 
-type_specifier : INT   { $$ = mkTreeNode(INT); }
-               | VOID  { $$ = mkTreeNode(VOID); }
+type_specifier : INT   { $$ = mkTreeNode(INT);  $$->type = T_Int;  }
+               | VOID  { $$ = mkTreeNode(VOID); $$->type = T_Void; }
                ;
 
 statements : statements statement
