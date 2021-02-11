@@ -48,9 +48,9 @@ quote \'
 {quote}                { char c;
                          if (!isascii(c = input()))
                            return YYUNDEF;
+                         Tok.text[0] = c;
                          if ((c = input()) != '\'')
                            return YYUNDEF;
-                         Tok.text[0] = c;
                          return CH;
                        }
 .                      { return YYUNDEF; }

@@ -101,7 +101,8 @@ print_statement : PRINT expression
                 ;
 
 assign_statement : var_ref ASSIGN expression SEMI
-                   { $$ = mkTreeNode(ASSIGN);
+                   { typeCheck_Assign($1, $3);
+                     $$ = mkTreeNode(ASSIGN);
                      $$->children[0] = $1;
                      $$->children[1] = $3;
                    }

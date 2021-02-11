@@ -95,7 +95,10 @@ static int cg_loadnum(int value) {
 
 static int cg_loadglob(int id) {
   int r = allocate_reg();
-  fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", getIdentName(id), reglist[r]);
+  if (getIdentType(id) == T_Int)
+    fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", getIdentName(id), reglist[r]);
+  else if (getIdentType(id) == T_Char)
+    fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", getIdentName(id), breglist[r]);
   return r;
 }
 
@@ -152,11 +155,17 @@ static void cg_printint(int r) {
 }
 
 static void cg_globsym(int id) {
-  fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
+  if (getIdentType(id) == T_Int)
+    fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
+  else if (getIdentType(id) == T_Char)
+    fprintf(Outfile, "\t.comm\t%s, 1\n", getIdentName(id));
 }
 
 static void cg_assign(int id, int r) {
-  fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdentName(id));
+  if (getIdentType(id) == T_Int)
+    fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdentName(id));
+  else if (getIdentType(id) == T_Char)
+    fprintf(Outfile, "\tmovb\t%s, %s(%%rip)\n", breglist[r], getIdentName(id));
   free_reg(r);
 }
 
@@ -184,6 +193,8 @@ static int cg_eval(TreeNode *root) {
   switch (root->tok) {
     case NUM:
       return cg_loadnum(root->attr.val);
+    case CH:
+      return cg_loadnum(((int) root->attr.ch));
     case IDENT:
       return cg_loadglob(root->attr.id);
     case EQ:
@@ -220,7 +231,7 @@ static void genAST(TreeNode *root) {
     cg_func_preamble(getIdentName(root->attr.id));
     genAST(root->children[0]);
     cg_func_postamble();
-  } else if (root->tok == VAR) {
+  } else if (root->tok == DECL) {
     int id = root->children[0]->attr.id;
     cg_globsym(id);
     if (root->children[1])
