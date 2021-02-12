@@ -4,6 +4,7 @@
   #include "util.h"
   #include "symtab.h"
   #include "analyze.h"
+  #include <string.h>
   #include <stdio.h>
   #include <stdlib.h>
   #include <ctype.h>
@@ -14,7 +15,7 @@
 
 %define api.value.type { TreeNode * }
 %define parse.error detailed
-%token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN PRINT IF ELSE WHILE FOR RETURN
+%token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
 %token GLUE FUNC DECL CALL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
@@ -66,7 +67,10 @@ var_declaraton : type_specifier var SEMI
 func_declaration : type_specifier var LP RP compound_statement
                    { $$ = mkTreeNode(FUNC);
                      $$->type = $1->type;
+                     $$->attr.id = $2->attr.id;
+                     setIdentType($$->attr.id, T_Func);
                      free($1);
+                     free($2);
                      $$->children[0] = $5;
                    }
                  ;
@@ -88,7 +92,6 @@ statements : statements statement
            ;
 
 statement : var_declaraton       { $$ = $1; }
-          | print_statement      { $$ = $1; }
           | assign_statement     { $$ = $1; }
           | compound_statement   { $$ = $1; }
           | if_statement         { $$ = $1; }
@@ -97,12 +100,6 @@ statement : var_declaraton       { $$ = $1; }
           | expression_statement { $$ = $1; }
           | return_statement     { $$ = $1; }
           ;
-
-print_statement : PRINT expression SEMI
-                  { $$ = mkTreeNode(PRINT);
-                    $$->children[0] = $2;
-                  }
-                ;
 
 assign_statement : var_ref ASSIGN expression SEMI
                    { typeCheck_Assign($1, $3);
@@ -159,12 +156,17 @@ expression_statement : expression SEMI { /* skip */ }
                      | SEMI { /* skip */ }
                      ;
 
-return_statement : RETURN expression SEMI;
+return_statement : RETURN expression SEMI
+                   { $$ = mkTreeNode(RETURN);
+                     $$->children[0] = $2;
+                   }
+                 ;
 
 var : IDENT
       { $$ = mkTreeNode(IDENT);
-        if (getIdentId(Tok.text) == -1)
+        if (getIdentId(Tok.text) == -1) {
           $$->attr.id = newIdent(Tok.text);
+        }
         else {
           fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
           exit(1);
@@ -174,6 +176,7 @@ var : IDENT
 
 var_ref : IDENT
           { $$ = mkTreeNode(IDENT);
+            /* primitive function: printint */
             int id = getIdentId(Tok.text);
             if (id == -1) {
               fprintf(Outfile, "Error: variable %s is referred before defination at line %d\n", Tok.text, lineno);

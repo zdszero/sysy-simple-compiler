@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 enum {
-  T_None, T_Int, T_Void, T_Char, T_Long
+  T_None, T_Int, T_Void, T_Char, T_Long, T_Func
 };
 
 typedef struct treeNode {

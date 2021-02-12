@@ -21,7 +21,6 @@ quote \'
 "long"                 { return LONG;    }
 "void"                 { return VOID;    }
 "char"                 { return CHAR;    }
-"print"                { return PRINT;   }
 "if"                   { return IF;      }
 "else"                 { return ELSE;    }
 "while"                { return WHILE;   }

@@ -255,7 +255,7 @@ static void genAST(TreeNode *root) {
       fprintf(Outfile, "\tandq\t$255, %s\n", reglist[r]);
     }
     cg_assign(root->children[0]->attr.id, r);
-  } else if (root->tok == PRINT) {
+  } else if (root->tok == CALL) {
     int r = cg_eval(root->children[0]);
     cg_printint(r);
   } else if (root->tok == IF) {

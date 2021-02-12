@@ -5,8 +5,15 @@
 SymRec SymTab[NSYMBOLS];
 
 static int Symbols = 0;
+static int isFirstTime = 1;
 
 int newIdent(char *s) {
+  if (isFirstTime) {
+    SymTab[0].name = "printint";
+    SymTab[0].type = T_Func;
+    Symbols = 1;
+    isFirstTime = 0;
+  }
   SymTab[Symbols].name = strdup(s);
   SymTab[Symbols].type = T_None;
   return Symbols++;

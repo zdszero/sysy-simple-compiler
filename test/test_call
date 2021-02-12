@@ -5,8 +5,8 @@ int foo() {
 int main() {
   int result;
   printint(10);
-  result= fred(15);
+  result= foo(15);
   printint(result);
-  printint(fred(15)+10);
+  printint(foo(15)+10);
   return(0);
 }
