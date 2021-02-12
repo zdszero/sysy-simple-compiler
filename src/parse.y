@@ -14,8 +14,8 @@
 
 %define api.value.type { TreeNode * }
 %define parse.error detailed
-%token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN PRINT IF ELSE WHILE FOR
-%token GLUE FUNC DECL
+%token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN PRINT IF ELSE WHILE FOR RETURN
+%token GLUE FUNC DECL CALL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
 %token LP RP LC RC
@@ -95,6 +95,7 @@ statement : var_declaraton       { $$ = $1; }
           | while_statement      { $$ = $1; }
           | for_statement        { $$ = $1; }
           | expression_statement { $$ = $1; }
+          | return_statement     { $$ = $1; }
           ;
 
 print_statement : PRINT expression SEMI
@@ -157,6 +158,8 @@ post_statement : var_ref ASSIGN expression
 expression_statement : expression SEMI { /* skip */ }
                      | SEMI { /* skip */ }
                      ;
+
+return_statement : RETURN expression SEMI;
 
 var : IDENT
       { $$ = mkTreeNode(IDENT);
@@ -260,12 +263,23 @@ expression : expression EQ expression
                $$->attr.val = Tok.numval;
              }
            | var_ref { $$ = $1; }
+           | function_call { $$ = $1; }
            | CH
              { $$ = mkTreeNode(CH);
                $$->type = T_Char;
                $$->attr.ch = Tok.text[0];
              }
            ;
+
+function_call : var_ref LP parameter-list RP
+                { $$ = mkTreeNode(CALL);
+                  $$->children[0] = $1;
+                  $$->children[1] = $3;
+                }
+              ;
+
+parameter-list : expression
+               ;
 
 %%
 
