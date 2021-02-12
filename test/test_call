@@ -1,12 +1,12 @@
 int foo() {
-  return (20);
+  return 20;
 }
 
 int main() {
+  printint(20);
   int result;
-  printint(10);
-  result= foo(15);
+  result = foo(15);
   printint(result);
-  printint(foo(15)+10);
-  return(0);
+  printint(result + foo(foo(15)));
+  return 0;
 }

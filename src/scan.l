@@ -13,49 +13,52 @@
   static int isFirstTime = 1;
 %}
 
-quote \'
+quote      \'
+number     "-"?("0"[Xx][0-9a-fA-F]+|[0-9]+)
+identifier [a-zA-Z_][a-zA-Z0-9_]*
+space      [ \t]+
 
 %%
 
-"int"                  { return INT;     }
-"long"                 { return LONG;    }
-"void"                 { return VOID;    }
-"char"                 { return CHAR;    }
-"if"                   { return IF;      }
-"else"                 { return ELSE;    }
-"while"                { return WHILE;   }
-"for"                  { return FOR;     }
-"return"               { return RETURN;  }
-"=="                   { return EQ;      }
-"!="                   { return NE;      }
-">"                    { return GT;      }
-">="                   { return GE;      }
-"<"                    { return LT;      }
-"<="                   { return LE;      }
-"="                    { return ASSIGN;  }
-"+"                    { return PLUS;    }
-"-"                    { return MINUS;   }
-"*"                    { return TIMES;   }
-"/"                    { return OVER;    }
-";"                    { return SEMI;    }
-"("                    { return LP;      }
-")"                    { return RP;      }
-"{"                    { return LC;      }
-"}"                    { return RC;      }
-\n                     { lineno++;       }
-[ \t]+                 { /* skip */      }
-[-]?(0x)?[0-9a-f]+     { return NUM;     }
-[a-zA-Z_][a-zA-Z0-9_]* { return IDENT;   }
-<<EOF>>                { return YYEOF;   }
-{quote}                { char c;
-                         if (!isascii(c = input()))
-                           return YYUNDEF;
-                         Tok.text[0] = c;
-                         if ((c = input()) != '\'')
-                           return YYUNDEF;
-                         return CH;
-                       }
-.                      { return YYUNDEF; }
+"int"         { return INT;     }
+"long"        { return LONG;    }
+"void"        { return VOID;    }
+"char"        { return CHAR;    }
+"if"          { return IF;      }
+"else"        { return ELSE;    }
+"while"       { return WHILE;   }
+"for"         { return FOR;     }
+"return"      { return RETURN;  }
+"=="          { return EQ;      }
+"!="          { return NE;      }
+">"           { return GT;      }
+">="          { return GE;      }
+"<"           { return LT;      }
+"<="          { return LE;      }
+"="           { return ASSIGN;  }
+"+"           { return PLUS;    }
+"-"           { return MINUS;   }
+"*"           { return TIMES;   }
+"/"           { return OVER;    }
+";"           { return SEMI;    }
+"("           { return LP;      }
+")"           { return RP;      }
+"{"           { return LC;      }
+"}"           { return RC;      }
+\n            { lineno++;       }
+<<EOF>>       { return YYEOF;   }
+{space}       { /* skip */      }
+{number}      { return NUM;     }
+{identifier}  { return IDENT;   }
+{quote}       { char c;
+                if (!isascii(c = input()))
+                  return YYUNDEF;
+                Tok.text[0] = c;
+                if ((c = input()) != '\'')
+                  return YYUNDEF;
+                return CH;
+              }
+.             { return YYUNDEF; }
 
 %%
 
@@ -73,15 +76,6 @@ void scan() {
       Tok.numval = strtol(yytext, NULL, 16);
     }
     else {
-      char *pc = yytext;
-      if (*pc == '-')
-        pc++;
-      for (; *pc != '\0'; pc++) {
-        if (!(*pc >= '0' && *pc <= '9')) {
-          fprintf(stderr, "Error: invalid number %s at line %d\n", yytext, lineno);
-          exit(1);
-        }
-      }
       Tok.numval = strtol(yytext, NULL, 10);
     }
   }

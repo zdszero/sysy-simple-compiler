@@ -73,18 +73,24 @@ void cg_func_preamble(char *name) {
     "\t.type\t%s, @function\n"
     "%s:\n"
     "\tpushq\t%%rbp\n"
-    "\tmovq\t%%rsp,\t%%rbp\n",
+    "\tmovq\t%%rsp, %%rbp\n",
     name, name, name);
 }
 
 /* return 0 */
 static void cg_func_postamble() {
   fputs(
-    "\tmovl\t$0, %eax\n"
     "\tpopq\t%rbp\n"
     "\tret\n",
   Outfile
   );
+}
+
+int cg_call(int r, int id) {
+  fprintf(Outfile, "\tmovq\t%s, %%rdi\n", reglist[r]);
+  fprintf(Outfile, "\tcall\t%s\n", getIdentName(id));
+  fprintf(Outfile, "\tmovq\t%%rax, %s\n", reglist[r]);
+  return r;
 }
 
 /* load the number value into a free register */
@@ -145,18 +151,6 @@ static int cg_div(int r1, int r2) {
   return r1;
 }
 
-/* call printint function */
-static void cg_printint(int r) {
-  /* number to be printed is stored in %rdi */
-  if (regs[RDI] == 0)
-    fprintf(Outfile, "\tpushq\t%%rdi\n");
-  fprintf(Outfile, "\tmovq\t%s, %%rdi\n", reglist[r]);
-  fprintf(Outfile, "\tcall\tprintint\n");
-  if (regs[RDI] == 0)
-    fprintf(Outfile, "\tpopq\t%%rdi\n");
-  free_reg(r);
-}
-
 static void cg_globsym(int id) {
   if (getIdentType(id) == T_Char)
     fprintf(Outfile, "\t.comm\t%s, 1\n", getIdentName(id));
@@ -195,8 +189,30 @@ static void cg_jump(char *how, int labId) {
     fprintf(Outfile, "\tjmp\tL%d\n", labId);
 }
 
+/* returned value is stored in register r, switch type according to id */
+static void cg_return(int r, int type) {
+  switch (type) {
+    case T_Char:
+      fprintf(Outfile, "\tmovb\t%s, %%al\n", breglist[r]);
+      break;
+    case T_Int:
+      fprintf(Outfile, "\tmovl\t%s, %%eax\n", lreglist[r]);
+      break;
+    case T_Long:
+      fprintf(Outfile, "\tmovq\t%s, %%rax\n", reglist[r]);
+      break;
+    default:
+      fprintf(stderr, "Internal Error: unknown return type %d\n", type);
+      exit(1);
+  }
+}
+
 static int cg_eval(TreeNode *root) {
   int leftreg, rightreg;
+  if (root->tok == CALL) {
+    int r = cg_eval(root->children[1]);
+    return cg_call(r, root->children[0]->attr.id);
+  }
   if (root->children[0])
     leftreg = cg_eval(root->children[0]);
   if (root->children[1])
@@ -229,7 +245,7 @@ static int cg_eval(TreeNode *root) {
     case OVER:
       return cg_div(leftreg, rightreg);
     default:
-      fprintf(stderr, "Error in function eval\n");
+      fprintf(stderr, "Internal Error in function eval\nUnexpected token: %d\n", root->tok);
       exit(1);
   }
 }
@@ -255,9 +271,6 @@ static void genAST(TreeNode *root) {
       fprintf(Outfile, "\tandq\t$255, %s\n", reglist[r]);
     }
     cg_assign(root->children[0]->attr.id, r);
-  } else if (root->tok == CALL) {
-    int r = cg_eval(root->children[0]);
-    cg_printint(r);
   } else if (root->tok == IF) {
     int cmpidx = root->children[0]->tok - EQ;
     int r = cg_eval(root->children[0]);
@@ -284,6 +297,13 @@ static void genAST(TreeNode *root) {
   } else if (root->tok == GLUE) {
     genAST(root->children[0]);
     genAST(root->children[1]);
+  } else if (root->tok == RETURN) {
+    cg_return(cg_eval(root->children[0]), root->children[0]->type);
+  } else if (root->tok == CALL) {
+    free_reg(cg_call(cg_eval(root->children[1]), root->children[0]->attr.id));
+  } else {
+    fprintf(stderr, "Internal Error: unknown sibling type %d\n", root->tok);
+    exit(1);
   }
   genAST(root->sibling);
 }

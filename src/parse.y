@@ -58,9 +58,9 @@ var_declaraton : type_specifier var SEMI
                    $2->type = $1->type;
                    setIdentType($2->attr.id, $2->type);
                    typeCheck_Assign($2, $4);
-                   free($1);
                    $$->children[0] = $2;
                    $$->children[1] = $4;
+                   free($1);
                  }
                ;
 
@@ -69,9 +69,16 @@ func_declaration : type_specifier var LP RP compound_statement
                      $$->type = $1->type;
                      $$->attr.id = $2->attr.id;
                      setIdentType($$->attr.id, T_Func);
+                     $$->children[0] = $5;
+                     if ($1->type == T_Void && typeCheck_Return($5)) {
+                       fprintf(Outfile, "Error: return statment in void function %s\n", getIdentName($2->attr.id));
+                       exit(1);
+                     } else if ($1->type != T_Void && !typeCheck_Return($5)) {
+                       fprintf(Outfile, "Error: missing return statement in function %s\n", getIdentName($2->attr.id));
+                       exit(1);
+                     }
                      free($1);
                      free($2);
-                     $$->children[0] = $5;
                    }
                  ;
 
@@ -274,15 +281,12 @@ expression : expression EQ expression
              }
            ;
 
-function_call : var_ref LP parameter-list RP
+function_call : var_ref LP expression RP
                 { $$ = mkTreeNode(CALL);
                   $$->children[0] = $1;
                   $$->children[1] = $3;
                 }
               ;
-
-parameter-list : expression
-               ;
 
 %%
 

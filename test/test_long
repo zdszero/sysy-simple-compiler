@@ -1,4 +1,4 @@
 int main() {
   long lnum = 0x11ffffffff;
-  print lnum;
+  printint(lnum);
 }

@@ -2,8 +2,8 @@ void main() {
   char ch = 'a';
   int num = 97;
   if (ch == num) {
-    print 1;
+    printint(1);
   } else {
-    print 0;
+    printint(0);
   }
 }

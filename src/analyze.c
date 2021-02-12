@@ -29,3 +29,12 @@ void typeCheck_Calc(TreeNode *t1, TreeNode *t2) {
     exit(1);
   }
 }
+
+/* return true if the last sibling is return type */
+int typeCheck_Return(TreeNode *t) {
+  while (t->sibling)
+    t = t->sibling;
+  if (t->tok == RETURN)
+    return 1;
+  return 0;
+}

@@ -1,9 +1,9 @@
 CC = gcc
-CCFLAGS = 
+CFLAGS = -g -Wall
 OBJS = main.o parse.o scan.o analyze.o codegen.o util.o symtab.o 
 
 cm: $(OBJS)
-	$(CC) -o $@ $(OBJS) $(CCFLAGS)
+	$(CC) -o $@ $(OBJS) $(CFLAGS)
 main.o: globals.h util.h
 analyze.o: globals.h symtab.h analyze.h
 scan.o: scan.c

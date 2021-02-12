@@ -3,11 +3,11 @@ void main() {
     int b = 5;
     if (a > 2) {
         if (a > 4) {
-            print a + 10;
+            printint(a + 10);
         } else {
-            print a * 2;
+            printint(a * 2);
         }
     } else {
-        print b;
+        printint(b);
     }
 }
