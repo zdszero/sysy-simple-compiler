@@ -8,6 +8,7 @@
 /* 0: busy     1: free */
 static int regs[REGCOUNT];
 static char *reglist[REGCOUNT] = {"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi", "%r8", "%r9", "%r10", "%r11"};
+static char *lreglist[REGCOUNT] = {"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "%r8d", "%r9d", "%r10d", "%r11d"};
 static char *breglist[REGCOUNT] = {"%al", "%bl", "%cl", "%dl", "%sil", "%dil", "%r8b", "%r9b", "%r10b", "%r11b"};
 static char *setlist[REGCOUNT] = {"sete", "setne", "setle", "setl", "setge", "setg"};
 static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
@@ -79,8 +80,8 @@ void cg_func_preamble(char *name) {
 /* return 0 */
 static void cg_func_postamble() {
   fputs(
-    "\tmovl $0, %eax\n"
-    "\tpopq %rbp\n"
+    "\tmovl\t$0, %eax\n"
+    "\tpopq\t%rbp\n"
     "\tret\n",
   Outfile
   );
@@ -95,10 +96,12 @@ static int cg_loadnum(int value) {
 
 static int cg_loadglob(int id) {
   int r = allocate_reg();
-  if (getIdentType(id) == T_Int)
-    fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", getIdentName(id), reglist[r]);
-  else if (getIdentType(id) == T_Char)
+  if (getIdentType(id) == T_Char)
     fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", getIdentName(id), breglist[r]);
+  else if (getIdentType(id) == T_Int)
+    fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", getIdentName(id), lreglist[r]);
+  else if (getIdentType(id) == T_Long)
+    fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", getIdentName(id), reglist[r]);
   return r;
 }
 
@@ -155,10 +158,12 @@ static void cg_printint(int r) {
 }
 
 static void cg_globsym(int id) {
-  if (getIdentType(id) == T_Int)
-    fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
-  else if (getIdentType(id) == T_Char)
+  if (getIdentType(id) == T_Char)
     fprintf(Outfile, "\t.comm\t%s, 1\n", getIdentName(id));
+  else if (getIdentType(id) == T_Int)
+    fprintf(Outfile, "\t.comm\t%s, 4\n", getIdentName(id));
+  else if (getIdentType(id) == T_Long)
+    fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
   else {
     fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
     exit(1);
@@ -166,10 +171,12 @@ static void cg_globsym(int id) {
 }
 
 static void cg_assign(int id, int r) {
-  if (getIdentType(id) == T_Int)
-    fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdentName(id));
-  else if (getIdentType(id) == T_Char)
+  if (getIdentType(id) == T_Char)
     fprintf(Outfile, "\tmovb\t%s, %s(%%rip)\n", breglist[r], getIdentName(id));
+  else if (getIdentType(id) == T_Int)
+    fprintf(Outfile, "\tmovl\t%s, %s(%%rip)\n", lreglist[r], getIdentName(id));
+  else if (getIdentType(id) == T_Long)
+    fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdentName(id));
   free_reg(r);
 }
 

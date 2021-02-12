@@ -14,7 +14,7 @@
 
 %define api.value.type { TreeNode * }
 %define parse.error detailed
-%token INT VOID CHAR IDENT NUM CH SEMI ASSIGN PRINT IF ELSE WHILE FOR
+%token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN PRINT IF ELSE WHILE FOR
 %token GLUE FUNC DECL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
@@ -74,6 +74,7 @@ func_declaration : type_specifier var LP RP compound_statement
 type_specifier : INT   { $$ = mkTreeNode(INT);  $$->type = T_Int;  }
                | VOID  { $$ = mkTreeNode(VOID); $$->type = T_Void; }
                | CHAR  { $$ = mkTreeNode(CHAR); $$->type = T_Char; }
+               | LONG  { $$ = mkTreeNode(LONG); $$->type = T_Long; }
                ;
 
 statements : statements statement
@@ -256,7 +257,7 @@ expression : expression EQ expression
            | NUM
              { $$ = mkTreeNode(NUM);
                $$->type = T_Int;
-               $$->attr.val = Tok.intval;
+               $$->attr.val = Tok.val;
              }
            | var_ref { $$ = $1; }
            | CH

@@ -1,6 +1,6 @@
 CC = gcc
 CCFLAGS = 
-OBJS = main.o symtab.o scan.o analyze.o parse.o codegen.o util.o 
+OBJS = main.o parse.o scan.o analyze.o codegen.o util.o symtab.o 
 
 cm: $(OBJS)
 	$(CC) -o $@ $(OBJS) $(CCFLAGS)

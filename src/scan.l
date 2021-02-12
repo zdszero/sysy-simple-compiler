@@ -4,6 +4,7 @@
   #include "globals.h"
   #include "scan.h"
   #include <stdio.h>
+  #include <stdlib.h>
   #include <ctype.h>
   #include <string.h>
   #define YY_DECL int scan_yylex(void)
@@ -17,6 +18,7 @@ quote \'
 %%
 
 "int"                  { return INT;     }
+"long"                 { return LONG;    }
 "void"                 { return VOID;    }
 "char"                 { return CHAR;    }
 "print"                { return PRINT;   }
@@ -42,7 +44,7 @@ quote \'
 "}"                    { return RC;      }
 \n                     { lineno++;       }
 [ \t]+                 { /* skip */      }
-[0-9]+                 { return NUM;     }
+[+-]?(0x)?[0-9a-f]+    { return NUM;     }
 [a-zA-Z_][a-zA-Z0-9_]* { return IDENT;   }
 <<EOF>>                { return YYEOF;   }
 {quote}                { char c;
@@ -67,6 +69,19 @@ void scan() {
   if (Tok.token == IDENT) {
     strcpy(Tok.text, yytext);
   } else if (Tok.token == NUM) {
-    Tok.intval = atoi(yytext);
+    if (yytext[0] == '0' && (yytext[1] == 'x' || yytext[1] == 'X'))
+      Tok.val = strtol(yytext, NULL, 16);
+    else {
+      char *pc = yytext;
+      if (*pc == '+' || *pc == '-')
+        pc++;
+      for (; pc != NULL; pc++) {
+        if (!(*pc >= '0' && *pc <= '9')) {
+          fprintf(stderr, "Error: invalid number %s at line %d\n", yytext, lineno);
+          exit(1);
+        }
+      }
+      Tok.val = strtol(yytext, NULL, 10);
+    }
   }
 }

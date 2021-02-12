@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 enum {
-  T_None, T_Int, T_Void, T_Char
+  T_None, T_Int, T_Void, T_Char, T_Long
 };
 
 typedef struct treeNode {
@@ -29,7 +29,7 @@ typedef struct treeNode {
 #include "parse.h"
 
 typedef struct token {
-  int intval;
+  int val;
   int token;  // identifier number in symtab
   char text[TEXTLEN + 1];
 } Token;

@@ -25,6 +25,7 @@ struct record nameMap[] = {
   {FUNC,   "func"   },
   {DECL,   "decl"   },
   {INT,    "int"    },
+  {LONG,   "long"   },
   {CH,     "char"   },
   {VOID,   "void"   },
   {SEMI,   "semi"   },
