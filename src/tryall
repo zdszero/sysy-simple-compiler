@@ -5,7 +5,7 @@ if [[ $# -eq 1 ]]; then
   printf ">> file $file\n"
   ./cm ../test/$file > out.s
   [[ $? -ne 0 ]] && exit 1
-  cc -o out out.s
+  cc -o out out.s ../lib/printint.c
   ./out
   exit 0
 fi
@@ -15,7 +15,7 @@ for file in $(ls ../test); do
     printf "\n>> file $file\n"
     ./cm ../test/$file > out.s
     [[ $? -ne 0 ]] && continue
-    cc -o out out.s
+    cc -o out out.s ../lib/printint.c
     ./out
   fi
 done
