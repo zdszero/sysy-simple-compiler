@@ -159,6 +159,10 @@ static void cg_globsym(int id) {
     fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
   else if (getIdentType(id) == T_Char)
     fprintf(Outfile, "\t.comm\t%s, 1\n", getIdentName(id));
+  else {
+    fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
+    exit(1);
+  }
 }
 
 static void cg_assign(int id, int r) {

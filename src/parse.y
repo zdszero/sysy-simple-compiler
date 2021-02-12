@@ -48,12 +48,14 @@ declaration : var_declaraton   { $$ = $1; }
 var_declaraton : type_specifier var SEMI
                  { $$ = mkTreeNode(DECL);
                    $2->type = $1->type;
+                   setIdentType($2->attr.id, $2->type);
                    free($1);
                    $$->children[0] = $2;
                  }
                | type_specifier var ASSIGN expression SEMI
                  { $$ = mkTreeNode(DECL);
                    $2->type = $1->type;
+                   setIdentType($2->attr.id, $2->type);
                    typeCheck_Assign($2, $4);
                    free($1);
                    $$->children[0] = $2;
@@ -144,7 +146,7 @@ for_statement : FOR LP statement expression_statement post_statement RP compound
                 }
               ;
 
-post_statement : var ASSIGN expression
+post_statement : var_ref ASSIGN expression
                  { $$ = mkTreeNode(ASSIGN);
                    $$->children[0] = $1;
                    $$->children[1] = $3;
@@ -174,6 +176,8 @@ var_ref : IDENT
               exit(1);
             } else {
               $$->attr.id = id;
+              $$->type = getIdentType(id);
+              setIdentType($$->attr.id, $$->type);
             }
           }
         ;
@@ -271,4 +275,5 @@ int yylex() {
 
 void yyerror(const char *msg) {
   fprintf(stderr, "%s in line %d\n", msg, lineno);
+  exit(1);
 }

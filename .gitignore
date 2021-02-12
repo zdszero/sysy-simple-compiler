@@ -4,3 +4,4 @@ out.s
 out
 parse.c
 scan.c
+todo.md

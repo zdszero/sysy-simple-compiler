@@ -4,6 +4,7 @@ if [[ $# -eq 1 ]]; then
   file=$1
   printf ">> file $file\n"
   ./cm ../test/$file > out.s
+  [[ $? -ne 0 ]] && exit 1
   cc -o out out.s
   ./out
   exit 0
@@ -13,6 +14,7 @@ for file in $(ls ../test); do
   if [[ $file == test* ]]; then
     printf "\n>> file $file\n"
     ./cm ../test/$file > out.s
+    [[ $? -ne 0 ]] && continue
     cc -o out out.s
     ./out
   fi
