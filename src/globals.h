@@ -20,7 +20,7 @@ typedef struct treeNode {
   int type;
   /* attributes for leaf nodes */
   union {
-    int val; // int value
+    long val; // int value
     int id;  // identifier id in symtab
     char ch; // char
   } attr;
@@ -29,8 +29,8 @@ typedef struct treeNode {
 #include "parse.h"
 
 typedef struct token {
-  int val;
   int token;  // identifier number in symtab
+  long numval;
   char text[TEXTLEN + 1];
 } Token;
 

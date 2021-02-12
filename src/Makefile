@@ -11,9 +11,9 @@ parse.o: parse.c
 symtab.o: globals.h symtab.h
 util.o: globals.h symtab.h util.h
 codegen.o: globals.h symtab.h codegen.h
-scan.c: scan.l
+scan.c: scan.l globals.h scan.h
 	flex -o scan.c scan.l
-parse.c: parse.y globals.h scan.h symtab.h util.h
+parse.c: parse.y globals.h scan.h symtab.h util.h analyze.h
 	bison -o parse.c parse.y -d
 
 .PHONY: test clean

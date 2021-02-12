@@ -69,8 +69,9 @@ void scan() {
   if (Tok.token == IDENT) {
     strcpy(Tok.text, yytext);
   } else if (Tok.token == NUM) {
-    if (yytext[0] == '0' && (yytext[1] == 'x' || yytext[1] == 'X'))
-      Tok.val = strtol(yytext, NULL, 16);
+    if (yytext[0] == '0' && (yytext[1] == 'x' || yytext[1] == 'X')) {
+      Tok.numval = strtol(yytext, NULL, 16);
+    }
     else {
       char *pc = yytext;
       if (*pc == '+' || *pc == '-')
@@ -81,7 +82,7 @@ void scan() {
           exit(1);
         }
       }
-      Tok.val = strtol(yytext, NULL, 10);
+      Tok.numval = strtol(yytext, NULL, 10);
     }
   }
 }

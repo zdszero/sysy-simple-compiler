@@ -88,9 +88,9 @@ static void cg_func_postamble() {
 }
 
 /* load the number value into a free register */
-static int cg_loadnum(int value) {
+static int cg_loadnum(long value) {
   int r = allocate_reg();
-  fprintf(Outfile, "\tmovq\t$%d, %s\n", value, reglist[r]);
+  fprintf(Outfile, "\tmovq\t$%ld, %s\n", value, reglist[r]);
   return r;
 }
 

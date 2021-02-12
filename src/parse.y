@@ -186,78 +186,78 @@ var_ref : IDENT
 expression : expression EQ expression
              { typeCheck_Compare($1, $3);
                $$ = mkTreeNode(EQ);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression NE expression
              { typeCheck_Compare($1, $3);
                $$ = mkTreeNode(NE);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression GT expression
              { typeCheck_Compare($1, $3);
                $$ = mkTreeNode(GT);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression GE expression
              { typeCheck_Compare($1, $3);
                $$ = mkTreeNode(GE);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression LT expression
              { typeCheck_Compare($1, $3);
                $$ = mkTreeNode(LT);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression LE expression
              { typeCheck_Compare($1, $3);
                $$ = mkTreeNode(LE);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression PLUS expression
              { typeCheck_Calc($1, $3);
                $$ = mkTreeNode(PLUS);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression MINUS expression
              { typeCheck_Calc($1, $3);
                $$ = mkTreeNode(MINUS);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression TIMES expression
              { typeCheck_Calc($1, $3);
                $$ = mkTreeNode(TIMES);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression OVER expression
              { typeCheck_Calc($1, $3);
                $$ = mkTreeNode(OVER);
-               $$->type = T_Int;
+               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | LP expression RP { $$ = $2; }
            | NUM
              { $$ = mkTreeNode(NUM);
-               $$->type = T_Int;
-               $$->attr.val = Tok.val;
+               $$->type = T_Long;
+               $$->attr.val = Tok.numval;
              }
            | var_ref { $$ = $1; }
            | CH
