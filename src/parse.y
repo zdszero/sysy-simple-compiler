@@ -97,7 +97,7 @@ statement : var_declaraton       { $$ = $1; }
           | expression_statement { $$ = $1; }
           ;
 
-print_statement : PRINT expression
+print_statement : PRINT expression SEMI
                   { $$ = mkTreeNode(PRINT);
                     $$->children[0] = $2;
                   }

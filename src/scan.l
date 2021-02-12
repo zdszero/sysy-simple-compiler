@@ -44,7 +44,7 @@ quote \'
 "}"                    { return RC;      }
 \n                     { lineno++;       }
 [ \t]+                 { /* skip */      }
-[+-]?(0x)?[0-9a-f]+    { return NUM;     }
+[-]?(0x)?[0-9a-f]+     { return NUM;     }
 [a-zA-Z_][a-zA-Z0-9_]* { return IDENT;   }
 <<EOF>>                { return YYEOF;   }
 {quote}                { char c;
@@ -74,9 +74,9 @@ void scan() {
     }
     else {
       char *pc = yytext;
-      if (*pc == '+' || *pc == '-')
+      if (*pc == '-')
         pc++;
-      for (; pc != NULL; pc++) {
+      for (; *pc != '\0'; pc++) {
         if (!(*pc >= '0' && *pc <= '9')) {
           fprintf(stderr, "Error: invalid number %s at line %d\n", yytext, lineno);
           exit(1);

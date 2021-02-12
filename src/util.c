@@ -30,7 +30,6 @@ struct record nameMap[] = {
   {VOID,   "void"   },
   {SEMI,   "semi"   },
   {IF,     "if"     },
-  {SEMI,   "semi"   },
   {ELSE,   "else"   },
   {WHILE,  "while"  },
   {FOR,    "for"    },
@@ -47,7 +46,10 @@ struct record nameMap[] = {
   {GE,     "ge"     },
   {LT,     "lt"     },
   {LE,     "le"     },
-  {PLUS,   "minus"  },
+  {PLUS,   "plus"   },
+  {MINUS,  "minus"  },
+  {TIMES,  "times"  },
+  {OVER,   "over"   },
   {YYEOF,  "eof"    }
 };
 
@@ -70,7 +72,7 @@ void printToken(int tok) {
     fprintf(Outfile, "func: %s\n", getIdentName(tmp->attr.id));
   } else if (tok == NUM) {
     if (tmp)
-      fprintf(Outfile, "num: %d\n", tmp->attr.val);
+      fprintf(Outfile, "num: %ld\n", tmp->attr.val);
     else
       fprintf(Outfile, "num\n");
   } else {
