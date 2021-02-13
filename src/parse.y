@@ -16,10 +16,12 @@
 %define api.value.type { TreeNode * }
 %define parse.error detailed
 %token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
+%token AND OR
 %token GLUE FUNC DECL CALL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
 %token LP RP LC RC
+%left AND OR
 %left EQ NE LE LT GE GT
 %left PLUS MINUS
 %left TIMES OVER
@@ -196,7 +198,19 @@ var_ref : IDENT
           }
         ;
 
-expression : expression EQ expression
+expression : expression AND expression
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(AND);
+               $$->children[0] = $1;
+               $$->children[1] = $3;
+             }
+           | expression OR expression
+             { typeCheck_Compare($1, $3);
+               $$ = mkTreeNode(OR);
+               $$->children[0] = $1;
+               $$->children[1] = $3;
+             }
+           | expression EQ expression
              { typeCheck_Compare($1, $3);
                $$ = mkTreeNode(EQ);
                $$->type = T_Long;

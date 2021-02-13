@@ -6,5 +6,4 @@ void main() {
     printint(sum);
     i = i+1;
   }
-  printint(sum);
 }

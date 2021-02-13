@@ -41,6 +41,8 @@ struct record nameMap[] = {
   {LC,     "lc"     },
   {RC,     "rc"     },
   {ASSIGN, "assign" },
+  {OR,     "or"     },
+  {AND,    "and"    },
   {EQ,     "eq"     },
   {NE,     "ne"     },
   {GT,     "gt"     },

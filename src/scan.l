@@ -35,6 +35,8 @@ space      [ \t]+
 ">="          { return GE;      }
 "<"           { return LT;      }
 "<="          { return LE;      }
+"&&"          { return AND;     }
+"||"          { return OR;      }
 "="           { return ASSIGN;  }
 "+"           { return PLUS;    }
 "-"           { return MINUS;   }
