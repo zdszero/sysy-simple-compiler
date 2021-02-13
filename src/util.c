@@ -31,6 +31,7 @@ struct record nameMap[] = {
   {CH,     "ch"     },
   {RETURN, "return" },
   {SEMI,   "semi"   },
+  {COMMA,  "comma"  },
   {IF,     "if"     },
   {ELSE,   "else"   },
   {WHILE,  "while"  },

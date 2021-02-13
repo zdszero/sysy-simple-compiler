@@ -16,7 +16,7 @@
 %define api.value.type { TreeNode * }
 %define parse.error detailed
 %token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
-%token AND OR AMPERSAND ASTERISK
+%token AND OR AMPERSAND ASTERISK COMMA
 %token GLUE FUNC DECL CALL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
@@ -48,21 +48,72 @@ declaration : var_declaraton   { $$ = $1; }
             | func_declaration { $$ = $1; }
             ;
 
-var_declaraton : type_specifier var SEMI
+var_declaraton : type_specifier var_list SEMI
                  { $$ = mkTreeNode(DECL);
+                   for (TreeNode *t = $2; t != NULL; t = t->sibling) {
+                     setIdentType(t, Sym_Var, $1->type);
+                     if (t->children[0])
+                       typeCheck_Assign(t, t->children[0]);
+                   }
                    setIdentType($2, Sym_Var, $1->type);
                    $$->children[0] = $2;
-                   free($1);
-                 }
-               | type_specifier var ASSIGN expression SEMI
-                 { $$ = mkTreeNode(DECL);
-                   setIdentType($2, Sym_Var, $1->type);
-                   typeCheck_Assign($2, $4);
-                   $$->children[0] = $2;
-                   $$->children[1] = $4;
                    free($1);
                  }
                ;
+
+var_list : var_list COMMA var_init
+           { YYSTYPE t = $1;
+             while (t->sibling)
+               t = t->sibling;
+             t->sibling = $3;
+             $$ = $1;
+           }
+         | var_init { $$ = $1; }
+         ;
+
+var_init : var { $$ = $1; }
+         | var ASSIGN expression
+           { $$ = $1;
+             $$->children[0] = $3;
+           }
+         ;
+
+var :  IDENT
+      { $$ = mkTreeNode(IDENT);
+        if (getIdentId(Tok.text) == -1) {
+          /* cannot resolve symbol kind and type for now */
+          $$->attr.id = newIdent(Tok.text, Sym_Unknown, T_None);
+        }
+        else {
+          fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
+          exit(1);
+        }
+      }
+    ;
+
+var_ref : TIMES var_ref
+          { $$ = mkTreeNode(ASTERISK);
+            $$->type = valueAt($2->type);
+            $$->children[0] = $2;
+          }
+        | AMPERSAND var_ref
+          { $$ = mkTreeNode(AMPERSAND);
+            $$->type = pointerTo($2->type);
+            $$->children[0] = $2;
+          }
+        | IDENT
+          { $$ = mkTreeNode(IDENT);
+            /* primitive function: printint */
+            int id = getIdentId(Tok.text);
+            if (id == -1) {
+              fprintf(Outfile, "Error: variable %s is referred before defination at line %d\n", Tok.text, lineno);
+              exit(1);
+            } else {
+              $$->attr.id = id;
+              $$->type = getIdentType(id);
+            }
+          }
+        ;
 
 func_declaration : type_specifier var LP RP compound_statement
                    { $$ = mkTreeNode(FUNC);
@@ -82,6 +133,7 @@ type_specifier : type_specifier TIMES
                | CHAR  { $$ = mkTreeNode(CHAR); $$->type = T_Char; }
                | LONG  { $$ = mkTreeNode(LONG); $$->type = T_Long; }
                ;
+
 
 statements : statements statement
              { YYSTYPE t = $1;
@@ -163,43 +215,6 @@ return_statement : RETURN expression SEMI
                      $$->children[0] = $2;
                    }
                  ;
-
-var :  IDENT
-      { $$ = mkTreeNode(IDENT);
-        if (getIdentId(Tok.text) == -1) {
-          /* cannot resolve symbol kind and type for now */
-          $$->attr.id = newIdent(Tok.text, Sym_Unknown, T_None);
-        }
-        else {
-          fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
-          exit(1);
-        }
-      }
-    ;
-
-var_ref : TIMES var_ref
-          { $$ = mkTreeNode(ASTERISK);
-            $$->type = valueAt($2->type);
-            $$->children[0] = $2;
-          }
-        | AMPERSAND var_ref
-          { $$ = mkTreeNode(AMPERSAND);
-            $$->type = pointerTo($2->type);
-            $$->children[0] = $2;
-          }
-        | IDENT
-          { $$ = mkTreeNode(IDENT);
-            /* primitive function: printint */
-            int id = getIdentId(Tok.text);
-            if (id == -1) {
-              fprintf(Outfile, "Error: variable %s is referred before defination at line %d\n", Tok.text, lineno);
-              exit(1);
-            } else {
-              $$->attr.id = id;
-              $$->type = getIdentType(id);
-            }
-          }
-        ;
 
 expression : expression AND expression
              { typeCheck_Compare($1, $3);

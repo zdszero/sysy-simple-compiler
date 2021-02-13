@@ -42,6 +42,7 @@ space      [ \t]+
                 return AMPERSAND;
               }
 "||"          { return OR;        }
+","           { return COMMA;     }
 "="           { return ASSIGN;    }
 "+"           { return PLUS;      }
 "-"           { return MINUS;     }

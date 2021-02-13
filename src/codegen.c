@@ -323,10 +323,11 @@ static void genAST(TreeNode *root) {
     cg_comment("function postamble");
     cg_func_postamble();
   } else if (root->tok == DECL) {
-    int id = root->children[0]->attr.id;
-    cg_globsym(id);
-    if (root->children[1])
-      cg_assign(id, cg_eval(root->children[1]));
+    for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
+      cg_globsym(t->attr.id);
+      if (t->children[0])
+        cg_assign(t->attr.id, cg_eval(t->children[0]));
+    }
   } else if (root->tok == ASSIGN) {
     cg_comment("assign");
     isAssign = 1;
