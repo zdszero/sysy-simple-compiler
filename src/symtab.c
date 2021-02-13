@@ -64,11 +64,8 @@ int newIdent(char *s, int kind, int type) {
   return Symbols++;
 }
 
-void setIdentType(TreeNode *t, int kind, int type, int dep) {
+void setIdentType(TreeNode *t, int kind, int type) {
   t->type = type;
-  for (int i = 0; i < dep; i++) {
-    t->type = pointerTo(t->type);
-  }
   SymTab[t->attr.id].kind = kind;
   SymTab[t->attr.id].type = t->type;
 }

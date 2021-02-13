@@ -35,8 +35,12 @@ space      [ \t]+
 ">="          { return GE;        }
 "<"           { return LT;        }
 "<="          { return LE;        }
-"&&"          { return AND;       }
-"&"           { return AMPERSAND; }
+"&"           { char c;
+                if ((c = input()) == '&')
+                  return AND;
+                unput(c);
+                return AMPERSAND;
+              }
 "||"          { return OR;        }
 "="           { return ASSIGN;    }
 "+"           { return PLUS;      }

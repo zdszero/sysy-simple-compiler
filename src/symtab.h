@@ -17,7 +17,7 @@ int newIdent(char *t, int kind, int type);
 int getIdentId(char *);
 int getIdentType(int id);
 char *getIdentName(int id);
-void setIdentType(TreeNode *t, int kind, int type, int dep);
+void setIdentType(TreeNode *t, int kind, int type);
 int pointerTo(int type);
 int valueAt(int type);
 

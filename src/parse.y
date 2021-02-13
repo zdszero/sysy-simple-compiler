@@ -11,7 +11,6 @@
   int yylex();
   void yyerror(const char *);
   TreeNode *syntaxTree;
-  static int ptrDepth = 0;
 %}
 
 %define api.value.type { TreeNode * }
@@ -51,15 +50,13 @@ declaration : var_declaraton   { $$ = $1; }
 
 var_declaraton : type_specifier var SEMI
                  { $$ = mkTreeNode(DECL);
-                   setIdentType($2, Sym_Var, $1->type, ptrDepth);
-                   ptrDepth = 0;
+                   setIdentType($2, Sym_Var, $1->type);
                    $$->children[0] = $2;
                    free($1);
                  }
                | type_specifier var ASSIGN expression SEMI
                  { $$ = mkTreeNode(DECL);
-                   setIdentType($2, Sym_Var, $1->type, ptrDepth);
-                   ptrDepth = 0;
+                   setIdentType($2, Sym_Var, $1->type);
                    typeCheck_Assign($2, $4);
                    $$->children[0] = $2;
                    $$->children[1] = $4;
@@ -69,15 +66,18 @@ var_declaraton : type_specifier var SEMI
 
 func_declaration : type_specifier var LP RP compound_statement
                    { $$ = mkTreeNode(FUNC);
-                     setIdentType($2, Sym_Func, $1->type, ptrDepth);
-                     ptrDepth = 0;
+                     setIdentType($2, Sym_Func, $1->type);
                      $$->children[0] = $2; $$->children[1] = $5;
                      typeCheck_HasReturn($1, $5, $2->attr.id);
                      free($1);
                    }
                  ;
 
-type_specifier : INT   { $$ = mkTreeNode(INT);  $$->type = T_Int;  }
+type_specifier : type_specifier TIMES
+                 { $$ = $1;
+                   $$->type = pointerTo($$->type);
+                 }
+               | INT   { $$ = mkTreeNode(INT);  $$->type = T_Int;  }
                | VOID  { $$ = mkTreeNode(VOID); $$->type = T_Void; }
                | CHAR  { $$ = mkTreeNode(CHAR); $$->type = T_Char; }
                | LONG  { $$ = mkTreeNode(LONG); $$->type = T_Long; }
@@ -164,11 +164,7 @@ return_statement : RETURN expression SEMI
                    }
                  ;
 
-var : TIMES var
-      { ptrDepth++;
-        $$ = $2;
-      }
-    | IDENT
+var :  IDENT
       { $$ = mkTreeNode(IDENT);
         if (getIdentId(Tok.text) == -1) {
           /* cannot resolve symbol kind and type for now */
