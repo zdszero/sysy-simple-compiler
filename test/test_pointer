@@ -1,6 +1,8 @@
+/* this is multiline comment */
 int main() {
   char  a;
-  char *b;
+  // this is single line comment
+  char *b;  
   char  c;
 
   int   d;

@@ -65,6 +65,18 @@ space      [ \t]+
                   return YYUNDEF;
                 return CH;
               }
+"/*"          { char c;
+                while ((c = input()) != EOF) {
+                  if (c == '\n')
+                    lineno++;
+                  else if (c == '*') {
+                    while ((c = input()) == '*');
+                    if (c == '/')
+                      break;
+                  }
+                }
+              } 
+"//".*        {    /* skip */     }
 .             { return YYUNDEF;   }
 
 %%
