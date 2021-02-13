@@ -2,8 +2,16 @@
 #include "analyze.h"
 #include <stdlib.h>
 
+static int isPointerType(int type) {
+  return (type >= T_Voidptr && type <= T_Longptr);
+}
+
 static int isComparable(int t1, int t2) {
-  if (t1 == VOID || t2 == VOID)
+  if (t1 == T_Void || t2 == T_Void)
+    return 0;
+  if (isPointerType(t1) && !isPointerType(t2))
+    return 0;
+  if (!isPointerType(t1) && isPointerType(t2))
     return 0;
   return 1;
 }
@@ -42,10 +50,10 @@ void typeCheck_Calc(TreeNode *t1, TreeNode *t2) {
 
 void typeCheck_HasReturn(TreeNode *t1, TreeNode *t2, int id) {
   if (t1->type == T_Void && hasReturn(t2)) {
-    fprintf(Outfile, "Error: return statment in void function %s\n", getIdentName(id));
+    fprintf(stderr, "Error: return statment in void function %s\n", getIdentName(id));
     exit(1);
   } else if (t1->type != T_Void && !hasReturn(t2)) {
-    fprintf(Outfile, "Error: missing return statement in function %s\n", getIdentName(id));
+    fprintf(stderr, "Error: missing return statement in function %s\n", getIdentName(id));
     exit(1);
   }
 }

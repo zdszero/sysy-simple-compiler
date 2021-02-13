@@ -17,7 +17,7 @@
 %define api.value.type { TreeNode * }
 %define parse.error detailed
 %token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
-%token AND OR AMPERSAND
+%token AND OR AMPERSAND ASTERISK
 %token GLUE FUNC DECL CALL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
@@ -182,12 +182,14 @@ var : TIMES var
     ;
 
 var_ref : TIMES var_ref
-          { $$ = $2;
-            $$->type = valueAt($$->type);
+          { $$ = mkTreeNode(ASTERISK);
+            $$->type = valueAt($2->type);
+            $$->children[0] = $2;
           }
         | AMPERSAND var_ref
-          { $$ = $2;
-            $$->type = pointerTo($$->type);
+          { $$ = mkTreeNode(AMPERSAND);
+            $$->type = pointerTo($2->type);
+            $$->children[0] = $2;
           }
         | IDENT
           { $$ = mkTreeNode(IDENT);

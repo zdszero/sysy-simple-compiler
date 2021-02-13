@@ -92,13 +92,75 @@ static int cg_loadnum(long value) {
 
 static int cg_loadglob(int id) {
   int r = allocate_reg();
-  if (getIdentType(id) == T_Char)
-    fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", getIdentName(id), breglist[r]);
-  else if (getIdentType(id) == T_Int)
-    fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", getIdentName(id), lreglist[r]);
-  else if (getIdentType(id) == T_Long)
-    fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", getIdentName(id), reglist[r]);
+  int type = getIdentType(id);
+  char *name = getIdentName(id);
+  switch (type) {
+    case T_Char:
+      fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", name, breglist[r]);
+      break;
+    case T_Int:
+      fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", name, lreglist[r]);
+      break;
+    case T_Long:
+    case T_Charptr:
+    case T_Intptr:
+    case T_Longptr:
+      fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", name, reglist[r]);
+      break;
+      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
+      break;
+    default:
+      fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
+      exit(1);
+      break;
+  }
   return r;
+}
+
+static void cg_globsym(int id) {
+  int type = getIdentType(id);
+  switch (type) {
+    case T_Char:
+      fprintf(Outfile, "\t.comm\t%s, 1\n", getIdentName(id));
+      break;
+    case T_Int:
+      fprintf(Outfile, "\t.comm\t%s, 4\n", getIdentName(id));
+      break;
+    case T_Long:
+    case T_Charptr:
+    case T_Intptr:
+    case T_Longptr:
+      fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
+      break;
+    default:
+      fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
+      exit(1);
+      break;
+  }
+}
+
+
+static void cg_assign(int id, int r) {
+  int type = getIdentType(id);
+  char *name = getIdentName(id);
+  switch (type) {
+    case T_Char:
+      fprintf(Outfile, "\tmovb\t%s, %s(%%rip)\n", breglist[r], name);
+      break;
+    case T_Int:
+      fprintf(Outfile, "\tmovl\t%s, %s(%%rip)\n", lreglist[r], name);
+      break;
+    case T_Long:
+    case T_Charptr:
+    case T_Intptr:
+    case T_Longptr:
+      fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], name);
+      break;
+    default:
+      fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
+      exit(1);
+  }
+  free_reg(r);
 }
 
 /*
@@ -139,29 +201,6 @@ static int cg_div(int r1, int r2) {
     fprintf(Outfile, "\tpopq\t%%rax\n");
   free_reg(r2);
   return r1;
-}
-
-static void cg_globsym(int id) {
-  if (getIdentType(id) == T_Char)
-    fprintf(Outfile, "\t.comm\t%s, 1\n", getIdentName(id));
-  else if (getIdentType(id) == T_Int)
-    fprintf(Outfile, "\t.comm\t%s, 4\n", getIdentName(id));
-  else if (getIdentType(id) == T_Long)
-    fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
-  else {
-    fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
-    exit(1);
-  }
-}
-
-static void cg_assign(int id, int r) {
-  if (getIdentType(id) == T_Char)
-    fprintf(Outfile, "\tmovb\t%s, %s(%%rip)\n", breglist[r], getIdentName(id));
-  else if (getIdentType(id) == T_Int)
-    fprintf(Outfile, "\tmovl\t%s, %s(%%rip)\n", lreglist[r], getIdentName(id));
-  else if (getIdentType(id) == T_Long)
-    fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], getIdentName(id));
-  free_reg(r);
 }
 
 /* test the result of r1 - r2 */
@@ -216,11 +255,22 @@ static void cg_return(int r, int type) {
 }
 
 static int cg_eval(TreeNode *root) {
-  int leftreg, rightreg;
   if (root->tok == CALL) {
     int r = cg_eval(root->children[1]);
     return cg_call(r, root->children[0]->attr.id);
+  } else if (root->tok == ASTERISK) {
+    cg_comment("dereference");
+    int r = cg_eval(root->children[0]);
+    fprintf(Outfile, "\tmovq\t(%s), %s\n", reglist[r], reglist[r]);
+    return r;
+  } else if (root->tok == AMPERSAND) {
+    cg_comment("get address");
+    int r = allocate_reg();
+    fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", getIdentName(root->children[0]->attr.id), reglist[r]);
+    return r;
   }
+  int leftreg, rightreg;
+  /* recursion for both left and right */
   if (root->children[0])
     leftreg = cg_eval(root->children[0]);
   if (root->children[1])
@@ -267,8 +317,10 @@ static void genAST(TreeNode *root) {
   if (!root)
     return;
   if (root->tok == FUNC) {
+    cg_comment("function preamble");
     cg_func_preamble(getIdentName(root->children[0]->attr.id));
     genAST(root->children[1]);
+    cg_comment("function postamble");
     cg_func_postamble();
   } else if (root->tok == DECL) {
     int id = root->children[0]->attr.id;
