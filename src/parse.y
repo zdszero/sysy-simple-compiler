@@ -11,12 +11,13 @@
   int yylex();
   void yyerror(const char *);
   TreeNode *syntaxTree;
+  static int ptrDepth = 0;
 %}
 
 %define api.value.type { TreeNode * }
 %define parse.error detailed
 %token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
-%token AND OR
+%token AND OR AMPERSAND
 %token GLUE FUNC DECL CALL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
@@ -50,15 +51,15 @@ declaration : var_declaraton   { $$ = $1; }
 
 var_declaraton : type_specifier var SEMI
                  { $$ = mkTreeNode(DECL);
-                   $2->type = $1->type;
-                   setIdentType($2->attr.id, $2->type);
-                   free($1);
+                   setIdentType($2, Sym_Var, $1->type, ptrDepth);
+                   ptrDepth = 0;
                    $$->children[0] = $2;
+                   free($1);
                  }
                | type_specifier var ASSIGN expression SEMI
                  { $$ = mkTreeNode(DECL);
-                   $2->type = $1->type;
-                   setIdentType($2->attr.id, $2->type);
+                   setIdentType($2, Sym_Var, $1->type, ptrDepth);
+                   ptrDepth = 0;
                    typeCheck_Assign($2, $4);
                    $$->children[0] = $2;
                    $$->children[1] = $4;
@@ -68,19 +69,11 @@ var_declaraton : type_specifier var SEMI
 
 func_declaration : type_specifier var LP RP compound_statement
                    { $$ = mkTreeNode(FUNC);
-                     $$->type = $1->type;
-                     $$->attr.id = $2->attr.id;
-                     setIdentType($$->attr.id, T_Func);
-                     $$->children[0] = $5;
-                     if ($1->type == T_Void && typeCheck_Return($5)) {
-                       fprintf(Outfile, "Error: return statment in void function %s\n", getIdentName($2->attr.id));
-                       exit(1);
-                     } else if ($1->type != T_Void && !typeCheck_Return($5)) {
-                       fprintf(Outfile, "Error: missing return statement in function %s\n", getIdentName($2->attr.id));
-                       exit(1);
-                     }
+                     setIdentType($2, Sym_Func, $1->type, ptrDepth);
+                     ptrDepth = 0;
+                     $$->children[0] = $2; $$->children[1] = $5;
+                     typeCheck_HasReturn($1, $5, $2->attr.id);
                      free($1);
-                     free($2);
                    }
                  ;
 
@@ -171,10 +164,15 @@ return_statement : RETURN expression SEMI
                    }
                  ;
 
-var : IDENT
+var : TIMES var
+      { ptrDepth++;
+        $$ = $2;
+      }
+    | IDENT
       { $$ = mkTreeNode(IDENT);
         if (getIdentId(Tok.text) == -1) {
-          $$->attr.id = newIdent(Tok.text);
+          /* cannot resolve symbol kind and type for now */
+          $$->attr.id = newIdent(Tok.text, Sym_Unknown, T_None);
         }
         else {
           fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
@@ -183,7 +181,15 @@ var : IDENT
       }
     ;
 
-var_ref : IDENT
+var_ref : TIMES var_ref
+          { $$ = $2;
+            $$->type = valueAt($$->type);
+          }
+        | AMPERSAND var_ref
+          { $$ = $2;
+            $$->type = pointerTo($$->type);
+          }
+        | IDENT
           { $$ = mkTreeNode(IDENT);
             /* primitive function: printint */
             int id = getIdentId(Tok.text);
@@ -193,7 +199,6 @@ var_ref : IDENT
             } else {
               $$->attr.id = id;
               $$->type = getIdentType(id);
-              setIdentType($$->attr.id, $$->type);
             }
           }
         ;

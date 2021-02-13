@@ -11,7 +11,7 @@ static char *reglist[REGCOUNT] = {"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi"
 static char *lreglist[REGCOUNT] = {"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "%r8d", "%r9d", "%r10d", "%r11d"};
 static char *breglist[REGCOUNT] = {"%al", "%bl", "%cl", "%dl", "%sil", "%dil", "%r8b", "%r9b", "%r10b", "%r11b"};
 static char *setlist[REGCOUNT] = {"sete", "setne", "setle", "setl", "setge", "setg"};
-static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
+// static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
 enum {RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11};
 static int labId = 1;
 static int isAssign = 1;
@@ -267,8 +267,8 @@ static void genAST(TreeNode *root) {
   if (!root)
     return;
   if (root->tok == FUNC) {
-    cg_func_preamble(getIdentName(root->attr.id));
-    genAST(root->children[0]);
+    cg_func_preamble(getIdentName(root->children[0]->attr.id));
+    genAST(root->children[1]);
     cg_func_postamble();
   } else if (root->tok == DECL) {
     int id = root->children[0]->attr.id;

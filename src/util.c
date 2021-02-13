@@ -24,10 +24,11 @@ struct record {
 struct record nameMap[] = {
   {FUNC,   "func"   },
   {DECL,   "decl"   },
+  {VOID,   "void"   },
+  {CHAR,   "char"   },
   {INT,    "int"    },
   {LONG,   "long"   },
-  {CH,     "char"   },
-  {VOID,   "void"   },
+  {CH,     "ch"     },
   {RETURN, "return" },
   {SEMI,   "semi"   },
   {IF,     "if"     },
@@ -43,6 +44,7 @@ struct record nameMap[] = {
   {ASSIGN, "assign" },
   {OR,     "or"     },
   {AND,    "and"    },
+  {AMPERSAND, "&"   },
   {EQ,     "eq"     },
   {NE,     "ne"     },
   {GT,     "gt"     },
@@ -71,8 +73,6 @@ void printToken(int tok) {
       fprintf(Outfile, "id: %s\n", getIdentName(tmp->attr.id));
     else
       fprintf(Outfile, "id\n");
-  }  else if (tok == FUNC) {
-    fprintf(Outfile, "func: %s\n", getIdentName(tmp->attr.id));
   } else if (tok == NUM) {
     if (tmp)
       fprintf(Outfile, "num: %ld\n", tmp->attr.val);
@@ -100,3 +100,4 @@ void printTree(TreeNode *t, int dep) {
   }
   printTree(t->sibling, dep);
 }
+

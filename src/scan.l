@@ -20,38 +20,39 @@ space      [ \t]+
 
 %%
 
-"int"         { return INT;     }
-"long"        { return LONG;    }
-"void"        { return VOID;    }
-"char"        { return CHAR;    }
-"if"          { return IF;      }
-"else"        { return ELSE;    }
-"while"       { return WHILE;   }
-"for"         { return FOR;     }
-"return"      { return RETURN;  }
-"=="          { return EQ;      }
-"!="          { return NE;      }
-">"           { return GT;      }
-">="          { return GE;      }
-"<"           { return LT;      }
-"<="          { return LE;      }
-"&&"          { return AND;     }
-"||"          { return OR;      }
-"="           { return ASSIGN;  }
-"+"           { return PLUS;    }
-"-"           { return MINUS;   }
-"*"           { return TIMES;   }
-"/"           { return OVER;    }
-";"           { return SEMI;    }
-"("           { return LP;      }
-")"           { return RP;      }
-"{"           { return LC;      }
-"}"           { return RC;      }
-\n            { lineno++;       }
-<<EOF>>       { return YYEOF;   }
-{space}       { /* skip */      }
-{number}      { return NUM;     }
-{identifier}  { return IDENT;   }
+"int"         { return INT;       }
+"long"        { return LONG;      }
+"void"        { return VOID;      }
+"char"        { return CHAR;      }
+"if"          { return IF;        }
+"else"        { return ELSE;      }
+"while"       { return WHILE;     }
+"for"         { return FOR;       }
+"return"      { return RETURN;    }
+"=="          { return EQ;        }
+"!="          { return NE;        }
+">"           { return GT;        }
+">="          { return GE;        }
+"<"           { return LT;        }
+"<="          { return LE;        }
+"&&"          { return AND;       }
+"&"           { return AMPERSAND; }
+"||"          { return OR;        }
+"="           { return ASSIGN;    }
+"+"           { return PLUS;      }
+"-"           { return MINUS;     }
+"*"           { return TIMES;     }
+"/"           { return OVER;      }
+";"           { return SEMI;      }
+"("           { return LP;        }
+")"           { return RP;        }
+"{"           { return LC;        }
+"}"           { return RC;        }
+\n            { lineno++;         }
+<<EOF>>       { return YYEOF;     }
+{space}       { /* skip */        }
+{number}      { return NUM;       }
+{identifier}  { return IDENT;     }
 {quote}       { char c;
                 if (!isascii(c = input()))
                   return YYUNDEF;
@@ -60,7 +61,7 @@ space      [ \t]+
                   return YYUNDEF;
                 return CH;
               }
-.             { return YYUNDEF; }
+.             { return YYUNDEF;   }
 
 %%
 

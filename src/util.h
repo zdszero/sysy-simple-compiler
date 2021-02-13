@@ -3,8 +3,8 @@
 
 #include "globals.h"
 
-extern TreeNode *mkTreeNode();
-extern void printTree(TreeNode *, int);
-extern void printToken(int);
+TreeNode *mkTreeNode();
+void printTree(TreeNode *, int);
+void printToken(int);
 
 #endif
