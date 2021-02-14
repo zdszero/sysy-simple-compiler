@@ -6,7 +6,7 @@
 static TreeNode *tmp = NULL;
 
 TreeNode *mkTreeNode(int tok) {
-  TreeNode *t = (TreeNode *)malloc(sizeof(TreeNode));
+  TreeNode *t = (TreeNode *) malloc(sizeof(TreeNode));
   t->tok = tok;
   for (int i = 0; i < CHILDNUM; i++) {
     t->children[i] = NULL;
@@ -42,6 +42,8 @@ struct record nameMap[] = {
   {RP,     "rp"     },
   {LC,     "lc"     },
   {RC,     "rc"     },
+  {LS,     "ls"     },
+  {RS,     "rs"     },
   {ASSIGN, "assign" },
   {OR,     "or"     },
   {AND,    "and"    },
@@ -69,23 +71,48 @@ char *getTokenName(int val) {
   return NULL;
 }
 
+static void printDimension(DimRec *dim) {
+  putchar('(');
+  for (DimRec *p = dim; p; p = p->next) {
+    printf("%d,", p->dim);
+  }
+  putchar(')');
+}
+
 void printToken(int tok) {
   if (tok == IDENT) {
-    if (tmp)
-      fprintf(Outfile, "id: %s\n", getIdentName(tmp->attr.id));
-    else
-      fprintf(Outfile, "id\n");
+    if (tmp) {
+      printf("id: %s->", getIdentName(tmp->attr.id));
+      switch (getIdentKind(tmp->attr.id)) {
+        case Sym_Func:
+          printf("func");
+          break;
+        case Sym_Var:
+          printf("var");
+          break;
+        case Sym_Array:
+          printf("array");
+          printDimension(getIdentDim(tmp->attr.id));
+          break;
+        default:
+          printf("error");
+          break;
+      }
+    } else {
+      printf("id");
+    }
+    putchar('\n');
   } else if (tok == NUM) {
     if (tmp)
-      fprintf(Outfile, "num: %ld\n", tmp->attr.val);
+      printf("num: %ld\n", tmp->attr.val);
     else
-      fprintf(Outfile, "num\n");
+      printf("num\n");
   } else {
     char *name = getTokenName(tok);
     if (name) {
-      fprintf(Outfile, "%s\n", name);
+      printf("%s\n", name);
     } else {
-      fprintf(Outfile, "error\n");
+      printf("error\n");
     }
   }
 }
@@ -95,7 +122,7 @@ void printTree(TreeNode *t, int dep) {
     return;
   tmp = t;
   for (int i = 0; i < dep; i++)
-    fprintf(Outfile, "| ");
+    printf("| ");
   printToken(t->tok);
   for (int i = 0; i < CHILDNUM; i++) {
     printTree(t->children[i], dep + 1);

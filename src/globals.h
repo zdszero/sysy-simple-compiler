@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 enum {
-  T_None, T_Void, T_Func, T_Char, T_Int, T_Long,
+  T_None, T_Void, T_Char, T_Int, T_Long,
   T_Voidptr, T_Intptr, T_Charptr, T_Longptr
 };
 
@@ -21,8 +21,8 @@ typedef struct treeNode {
   int type;
   /* attributes for leaf nodes */
   union {
-    long val; // int value
-    int id;  // identifier id in symtab
+    long val; // number
+    int id;  // identifer
     char ch; // char
   } attr;
 } TreeNode;

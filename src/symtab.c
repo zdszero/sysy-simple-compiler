@@ -54,11 +54,14 @@ int valueAt(int type) {
 int newIdent(char *s, int kind, int type) {
   if (isFirstTime) {
     SymTab[0].name = "printchar";
-    SymTab[0].type = T_Func;
+    SymTab[0].type = T_Void;
+    SymTab[0].kind = Sym_Func;
     SymTab[1].name = "printint";
-    SymTab[1].type = T_Func;
+    SymTab[1].type = T_Void;
+    SymTab[1].kind = Sym_Func;
     SymTab[2].name = "printlong";
-    SymTab[2].type = T_Func;
+    SymTab[2].type = T_Void;
+    SymTab[2].kind = Sym_Func;
     isFirstTime = 0;
     Symbols = 3;
   }
@@ -68,10 +71,12 @@ int newIdent(char *s, int kind, int type) {
   return Symbols++;
 }
 
-void setIdentType(TreeNode *t, int kind, int type) {
-  t->type = type;
-  SymTab[t->attr.id].kind = kind;
-  SymTab[t->attr.id].type = t->type;
+void setIdentType(int id, int type) {
+  SymTab[id].type = type;
+}
+
+void setIdentKind(int id, int kind) {
+  SymTab[id].kind = kind;
 }
 
 /* find identifier in symbol table and return its index */
@@ -90,4 +95,25 @@ char *getIdentName(int id) {
 
 int getIdentType(int id) {
   return SymTab[id].type;
+}
+
+int getIdentKind(int id) {
+  return SymTab[id].kind;
+}
+
+DimRec *getIdentDim(int id) {
+  return SymTab[id].first;
+}
+
+void addDimension(int id, int d) {
+  DimRec *dr = (DimRec *) malloc(sizeof(DimRec));
+  dr->dim = d;
+  dr->next = NULL;
+  if (!SymTab[id].first) {
+    SymTab[id].first = dr;
+  } else {
+    DimRec *p;
+    for (p = SymTab[id].first; p->next; p = p->next);
+    p->next = dr;
+  }
 }

@@ -1,0 +1,10 @@
+int a[3][3] = {{1,1,1},{2,2,2},{3,3,3}};
+int b[4] = {};
+
+int main() {
+  printint(a[0][0]);
+  printint(a[1][1]);
+  printint(a[2][2]);
+  printint(b[2]);
+  return 0;
+}

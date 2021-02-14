@@ -3,6 +3,7 @@
 %{
   #include "globals.h"
   #include "scan.h"
+  #include "util.h"
   #include <stdio.h>
   #include <stdlib.h>
   #include <ctype.h>
@@ -10,6 +11,7 @@
   #define YY_DECL int scan_yylex(void)
   Token Tok;
   int lineno = 1;
+  extern int traceScan;
   static int isFirstTime = 1;
 %}
 
@@ -53,6 +55,8 @@ space      [ \t]+
 ")"           { return RP;        }
 "{"           { return LC;        }
 "}"           { return RC;        }
+"["           { return LS;        }
+"]"           { return RS;        }
 \n            { lineno++;         }
 <<EOF>>       { return YYEOF;     }
 {space}       { /* skip */        }
@@ -99,4 +103,6 @@ void scan() {
       Tok.numval = strtol(yytext, NULL, 10);
     }
   }
+  if (traceScan)
+    printToken(Tok.token);
 }

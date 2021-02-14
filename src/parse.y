@@ -15,19 +15,22 @@
 
 %define api.value.type { TreeNode * }
 %define parse.error detailed
+/* specity node kind, not regarded as tokens */
+%token GLUE FUNC DECL CALL
+/* tokens used for scanning */
 %token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
 %token AND OR AMPERSAND ASTERISK COMMA
-%token GLUE FUNC DECL CALL
 %token PLUS MINUS TIMES OVER
 %token EQ NE LE LT GE GT
-%token LP RP LC RC
+%token LP RP LC RC LS RS
+/* operator precedence */
 %left AND OR
 %left EQ NE LE LT GE GT
 %left PLUS MINUS
 %left TIMES OVER
-/* solve dangling else problem, prefer shift to reduce */
-%precedence RP
-%precedence ELSE
+/* pick a choice between shift-reduce conflict */
+%precedence RP AMPERSAND
+%precedence ELSE LS LP
 
 %%
 
@@ -51,11 +54,11 @@ declaration : var_declaraton   { $$ = $1; }
 var_declaraton : type_specifier var_list SEMI
                  { $$ = mkTreeNode(DECL);
                    for (TreeNode *t = $2; t != NULL; t = t->sibling) {
-                     setIdentType(t, Sym_Var, $1->type);
+                     setIdentType($$->attr.id, $1->type);
+                     $$->type = $1->type;
                      if (t->children[0])
                        typeCheck_Assign(t, t->children[0]);
                    }
-                   setIdentType($2, Sym_Var, $1->type);
                    $$->children[0] = $2;
                    free($1);
                  }
@@ -71,14 +74,37 @@ var_list : var_list COMMA var_init
          | var_init { $$ = $1; }
          ;
 
-var_init : var { $$ = $1; }
+var_init : var
+           { $$ = $1;
+             setIdentKind($$->attr.id, Sym_Var);
+           }
+         | array
+           { $$ = $1;
+             setIdentKind($$->attr.id, Sym_Array);
+           }
          | var ASSIGN expression
            { $$ = $1;
+             setIdentKind($$->attr.id, Sym_Var);
+             $$->children[0] = $3;
+           }
+         | array ASSIGN initializer
+           { $$ = $1;
+             setIdentKind($$->attr.id, Sym_Array);
              $$->children[0] = $3;
            }
          ;
 
-var :  IDENT
+array : array LS NUM RS
+        { $$ = $1;
+          addDimension($$->attr.id, Tok.numval);
+        }
+      | var LS NUM RS
+        { $$ = $1;
+          addDimension($$->attr.id, Tok.numval);
+        }
+      ;
+
+var : IDENT
       { $$ = mkTreeNode(IDENT);
         if (getIdentId(Tok.text) == -1) {
           /* cannot resolve symbol kind and type for now */
@@ -91,6 +117,21 @@ var :  IDENT
       }
     ;
 
+initializer : expression { $$ = $1; }
+            | %empty
+            | LC initializer_list RC { $$ = $2; }
+            ;
+
+initializer_list : initializer { $$ = $1; }
+                 | initializer_list COMMA initializer
+                   { YYSTYPE t = $1;
+                     while (t->sibling)
+                       t = t->sibling;
+                     t->sibling = $3;
+                     $$ = $1;
+                   }
+                 ;
+
 var_ref : TIMES var_ref
           { $$ = mkTreeNode(ASTERISK);
             $$->type = valueAt($2->type);
@@ -100,6 +141,24 @@ var_ref : TIMES var_ref
           { $$ = mkTreeNode(AMPERSAND);
             $$->type = pointerTo($2->type);
             $$->children[0] = $2;
+          }
+        | var_ref LP expression RP
+          { $$ = mkTreeNode(CALL);
+            $$->children[0] = $1;
+            $$->children[1] = $3;
+          }
+        | var_ref LS NUM RS
+          { $$ = $1;
+            YYSTYPE t = $$->children[0];
+            if (!t) {
+              $$->children[0] = mkTreeNode(NUM);
+              $$->children[0]->attr.val = Tok.numval;
+            } else {
+              while (t->sibling)
+                t = t->sibling;
+              t->sibling = mkTreeNode(NUM);
+              t->sibling->attr.val = Tok.numval;
+            }
           }
         | IDENT
           { $$ = mkTreeNode(IDENT);
@@ -115,9 +174,12 @@ var_ref : TIMES var_ref
           }
         ;
 
+
 func_declaration : type_specifier var LP RP compound_statement
                    { $$ = mkTreeNode(FUNC);
-                     setIdentType($2, Sym_Func, $1->type);
+                     setIdentType($2->attr.id, $1->type);
+                     $2->type = $1->type;
+                     setIdentKind($2->attr.id, Sym_Func);
                      $$->children[0] = $2; $$->children[1] = $5;
                      typeCheck_HasReturn($1, $5, $2->attr.id);
                      free($1);
@@ -299,13 +361,12 @@ expression : expression AND expression
                $$->children[1] = $3;
              }
            | LP expression RP { $$ = $2; }
+           | var_ref { $$ = $1; }
            | NUM
              { $$ = mkTreeNode(NUM);
                $$->type = T_Long;
                $$->attr.val = Tok.numval;
              }
-           | var_ref { $$ = $1; }
-           | function_call { $$ = $1; }
            | CH
              { $$ = mkTreeNode(CH);
                $$->type = T_Char;
@@ -313,12 +374,6 @@ expression : expression AND expression
              }
            ;
 
-function_call : var_ref LP expression RP
-                { $$ = mkTreeNode(CALL);
-                  $$->children[0] = $1;
-                  $$->children[1] = $3;
-                }
-              ;
 
 %%
 

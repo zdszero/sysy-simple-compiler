@@ -5,9 +5,9 @@
 #include "codegen.h"
 #include <stdlib.h>
 
-#define TEST_SCAN 0
-#define TEST_PARSE 0
-#define TEST_CODEGEN 1
+int traceScan = 0;
+int traceParse = 1;
+int generateCode = 0;
 
 FILE *Infile, *Outfile;
 
@@ -24,19 +24,10 @@ int main(int argc, char *argv[])
   }
   Outfile = stdout;
   Tok.token = -1;
-#if TEST_SCAN
-  while (Tok.token != YYEOF) {
-    scan();
-    printToken(Tok.token);
-  }
-  return 0;
-#endif
   yyparse();
-#if TEST_PARSE
-  printTree(syntaxTree, 0);
-#endif
-#if TEST_CODEGEN
-  genCode(syntaxTree);
-#endif
+  if (traceParse)
+    printTree(syntaxTree, 0);
+  if (generateCode)
+    genCode(syntaxTree);
   return 0;
 }
