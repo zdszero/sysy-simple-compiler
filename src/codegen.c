@@ -58,6 +58,7 @@ static void cg_preamble() {
 
 void cg_func_preamble(char *name) {
   fprintf (Outfile,
+    "\t.text\n"
     "\t.globl\t%s\n"
     "\t.type\t%s, @function\n"
     "%s:\n"
@@ -119,18 +120,21 @@ static int cg_loadglob(int id) {
 
 static void cg_globsym(int id) {
   int type = getIdentType(id);
+  char *name = getIdentName(id);
+  fprintf(Outfile, "\t.data\n");
+  fprintf(Outfile, "\t.globl\t%s\n", name);
   switch (type) {
     case T_Char:
-      fprintf(Outfile, "\t.comm\t%s, 1\n", getIdentName(id));
+      fprintf(Outfile, "%s:\t.byte\t0\n", name);
       break;
     case T_Int:
-      fprintf(Outfile, "\t.comm\t%s, 4\n", getIdentName(id));
+      fprintf(Outfile, "%s:\t.long\t0\n", name);
       break;
     case T_Long:
     case T_Charptr:
     case T_Intptr:
     case T_Longptr:
-      fprintf(Outfile, "\t.comm\t%s, 8\n", getIdentName(id));
+      fprintf(Outfile, "%s:\t.quad\t0\n", name);
       break;
     default:
       fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));

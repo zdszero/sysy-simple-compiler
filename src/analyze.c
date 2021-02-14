@@ -2,16 +2,10 @@
 #include "analyze.h"
 #include <stdlib.h>
 
-static int isPointerType(int type) {
-  return (type >= T_Voidptr && type <= T_Longptr);
-}
-
 static int isComparable(int t1, int t2) {
   if (t1 == T_Void || t2 == T_Void)
     return 0;
-  if (isPointerType(t1) && !isPointerType(t2))
-    return 0;
-  if (!isPointerType(t1) && isPointerType(t2))
+  if (t1 == T_Func || t2 == T_Func)
     return 0;
   return 1;
 }
