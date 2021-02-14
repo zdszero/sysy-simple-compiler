@@ -53,10 +53,14 @@ int valueAt(int type) {
 
 int newIdent(char *s, int kind, int type) {
   if (isFirstTime) {
-    SymTab[0].name = "printint";
+    SymTab[0].name = "printchar";
     SymTab[0].type = T_Func;
-    Symbols = 1;
+    SymTab[1].name = "printint";
+    SymTab[1].type = T_Func;
+    SymTab[2].name = "printlong";
+    SymTab[2].type = T_Func;
     isFirstTime = 0;
+    Symbols = 3;
   }
   SymTab[Symbols].name = strdup(s);
   SymTab[Symbols].kind = kind;

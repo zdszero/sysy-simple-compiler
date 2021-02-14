@@ -332,6 +332,7 @@ static void genAST(TreeNode *root) {
       if (t->children[0])
         cg_assign(t->attr.id, cg_eval(t->children[0]));
     }
+    fprintf(Outfile, "\t.text\n");
   } else if (root->tok == ASSIGN) {
     cg_comment("assign");
     isAssign = 1;

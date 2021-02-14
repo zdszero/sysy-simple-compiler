@@ -2,9 +2,12 @@ int   c;
 int   d;
 int  *e;
 int   f;
+long  g;
+long *h;
 
 int main() {
   c= 12; d=18; printint(c);
   e= &c + 1; f= *e; printint(f);
+  g = 24; h = &g; printint(*h);
   return(0);
 }

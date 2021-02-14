@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 enum {
-  T_None, T_Void, T_Int, T_Char, T_Long, T_Func,
+  T_None, T_Void, T_Func, T_Char, T_Int, T_Long,
   T_Voidptr, T_Intptr, T_Charptr, T_Longptr
 };
 

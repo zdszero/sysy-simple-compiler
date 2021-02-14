@@ -2,6 +2,22 @@
 #include "analyze.h"
 #include <stdlib.h>
 
+static int isPointerType(int type) {
+  return (type >= T_Voidptr && type <= T_Longptr);
+}
+
+static int isNumberType(int type) {
+  return (type == T_Int || type == T_Long);
+}
+
+static int getSize(int type) {
+  if (type == T_Intptr)
+    return 4;
+  else if (type == T_Longptr)
+    return 8;
+  return 1;
+}
+
 static int isComparable(int t1, int t2) {
   if (t1 == T_Void || t2 == T_Void)
     return 0;
@@ -39,6 +55,10 @@ void typeCheck_Calc(TreeNode *t1, TreeNode *t2) {
   if (!isComparable(t1->type, t2->type)) {
     fprintf(stderr, "Error: wrong types for arithmetic calculation at line %d", lineno);
     exit(1);
+  } else if (isPointerType(t1->type) && isNumberType(t2->type)) {
+    t2->attr.val *= getSize(t1->type);
+  } else if (isNumberType(t1->type) && isPointerType(t2->type)) {
+    t1->attr.val *= getSize(t2->type);
   }
 }
 
