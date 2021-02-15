@@ -11,6 +11,7 @@
   int yylex();
   void yyerror(const char *);
   TreeNode *syntaxTree;
+  int arrlen = 1;
 %}
 
 %define api.value.type { TreeNode * }
@@ -20,7 +21,7 @@
 /* tokens used for scanning */
 %token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
 %token AND OR AMPERSAND ASTERISK COMMA
-%token PLUS MINUS TIMES OVER
+%token PLUS MINUS TIMES OVER LEVEL
 %token EQ NE LE LT GE GT
 %token LP RP LC RC LS RS
 /* operator precedence */
@@ -91,16 +92,27 @@ var_init : var
            { $$ = $1;
              setIdentKind($$->attr.id, Sym_Array);
              $$->children[0] = $3;
+             checkArray($$);
            }
          ;
 
 array : array LS NUM RS
         { $$ = $1;
           addDimension($$->attr.id, Tok.numval);
+          arrlen *= Tok.numval;
         }
       | var LS NUM RS
         { $$ = $1;
+          if (Tok.numval <= 0) {
+            fprintf(stderr, "Error: array cannot be declared with a negative size in line %d\n", lineno);
+            exit(1);
+          }
           addDimension($$->attr.id, Tok.numval);
+          arrlen *= Tok.numval;
+        }
+      | var LS RS
+        { $$ = $1;
+          addDimension($$->attr.id, 0);
         }
       ;
 
@@ -118,8 +130,15 @@ var : IDENT
     ;
 
 initializer : expression { $$ = $1; }
-            | %empty
-            | LC initializer_list RC { $$ = $2; }
+            | LC RC { $$ = mkTreeNode(LEVEL); }
+            | LC initializer_list RC
+              { $$ = mkTreeNode(LEVEL);
+                $$->children[0] = $2;
+              }
+            | LC initializer_list COMMA RC
+              { $$ = mkTreeNode(LEVEL);
+                $$->children[0] = $2;
+              }
             ;
 
 initializer_list : initializer { $$ = $1; }

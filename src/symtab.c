@@ -105,6 +105,14 @@ DimRec *getIdentDim(int id) {
   return SymTab[id].first;
 }
 
+void setDimension(int id, int lev, int val) {
+  DimRec *p = SymTab[id].first;
+  for (int i = 1; i < lev; i++) {
+    p = p->next;
+  }
+  p->dim = val;
+}
+
 void addDimension(int id, int d) {
   DimRec *dr = (DimRec *) malloc(sizeof(DimRec));
   dr->dim = d;
@@ -116,4 +124,12 @@ void addDimension(int id, int d) {
     for (p = SymTab[id].first; p->next; p = p->next);
     p->next = dr;
   }
+}
+
+int getDimension(int id, int lev) {
+  DimRec *p = SymTab[id].first;
+  for (int i = 1; i < lev; i++) {
+    p = p->next;
+  }
+  return p->dim;
 }

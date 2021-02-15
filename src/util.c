@@ -37,6 +37,7 @@ struct record nameMap[] = {
   {WHILE,  "while"  },
   {FOR,    "for"    },
   {GLUE,   "glue"   },
+  {LEVEL,  "level"  },
   {CALL,   "call"   },
   {LP,     "lp"     },
   {RP,     "rp"     },
