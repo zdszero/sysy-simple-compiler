@@ -379,72 +379,82 @@ static void genAST(TreeNode *root) {
     cg_section_data();
   else
     cg_section_text();
-  if (root->tok == FUNC) {
-    cg_comment("function preamble");
-    cg_func_preamble(getIdentName(root->children[0]->attr.id));
-    genAST(root->children[1]);
-    cg_comment("function postamble");
-    cg_func_postamble();
-  } else if (root->tok == DECL) {
-    cg_comment("declaration begin");
-    for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
-      int kind = getIdentKind(t->attr.id);
-      if (kind == Sym_Var) {
-        cg_glob_var(t->attr.id);
-        if (t->children[0])
-          cg_assign(t->attr.id, cg_eval(t->children[0]));
-      } else if (kind == Sym_Array) {
-        cg_glob_array(t);
-      } else {
-        fprintf(stderr, "Internal Error: wrong kind after decl codgen\n");
+  int r;
+  switch (root->tok) {
+    case FUNC:
+      cg_comment("function preamble");
+      cg_func_preamble(getIdentName(root->children[0]->attr.id));
+      genAST(root->children[1]);
+      cg_comment("function postamble");
+      cg_func_postamble();
+      break;
+    case DECL:
+      cg_comment("declaration begin");
+      for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
+        int kind = getIdentKind(t->attr.id);
+        if (kind == Sym_Var) {
+          cg_glob_var(t->attr.id);
+          if (t->children[0])
+            cg_assign(t->attr.id, cg_eval(t->children[0]));
+        } else if (kind == Sym_Array) {
+          cg_glob_array(t);
+        } else {
+          fprintf(stderr, "Internal Error: wrong kind after decl codgen\n");
+        }
       }
-    }
-    cg_comment("declaration end");
-  } else if (root->tok == ASSIGN) {
-    cg_comment("assign");
-    isAssign = 1;
-    int r = cg_eval(root->children[1]);
-    cg_assign(root->children[0]->attr.id, r);
-  } else if (root->tok == IF) {
-    cg_comment("if statement");
-    int r = cg_eval(root->children[0]);
-    cg_comment("fail jump");
-    fprintf(Outfile, "\tcmpq\t$0, %s\n", reglist[r]);
-    cg_jump("je", labId);
-    free_reg(r);
-    cg_comment("if branch");
-    genAST(root->children[1]);
-    if (root->children[2]) {
-      cg_jump(NULL, labId+1);
-    }
-    cg_comment("else branch");
-    cg_label();
-    if (root->children[2]) {
-      genAST(root->children[2]);
+      cg_comment("declaration end");
+      break;
+    case ASSIGN:
+      cg_comment("assign");
+      isAssign = 1;
+      r = cg_eval(root->children[1]);
+      cg_assign(root->children[0]->attr.id, r);
+      break;
+    case IF:
+      cg_comment("if statement");
+      r = cg_eval(root->children[0]);
+      cg_comment("fail jump");
+      fprintf(Outfile, "\tcmpq\t$0, %s\n", reglist[r]);
+      cg_jump("je", labId);
+      free_reg(r);
+      cg_comment("if branch");
+      genAST(root->children[1]);
+      if (root->children[2]) {
+        cg_jump(NULL, labId+1);
+      }
+      cg_comment("else branch");
       cg_label();
-    }
-  } else if (root->tok == WHILE) {
-    cg_comment("while");
-    cg_label();
-    int r = cg_eval(root->children[0]);
-    fprintf(Outfile, "\tcmpq\t$0, %s\n", reglist[r]);
-    cg_comment("jump out of while");
-    cg_jump("je", labId);
-    free_reg(r);
-    genAST(root->children[1]);
-    cg_comment("loop jump");
-    cg_jump(NULL, labId-1);
-    cg_label();
-  } else if (root->tok == GLUE) {
-    genAST(root->children[0]);
-    genAST(root->children[1]);
-  } else if (root->tok == RETURN) {
-    cg_return(cg_eval(root->children[0]), root->children[0]->type);
-  } else if (root->tok == CALL) {
-    free_reg(cg_call(cg_eval(root->children[1]), root->children[0]->attr.id));
-  } else {
-    fprintf(stderr, "Internal Error: unknown sibling type %d\n", root->tok);
-    exit(1);
+      if (root->children[2]) {
+        genAST(root->children[2]);
+        cg_label();
+      }
+      break;
+    case WHILE:
+      cg_comment("while");
+      cg_label();
+      r = cg_eval(root->children[0]);
+      fprintf(Outfile, "\tcmpq\t$0, %s\n", reglist[r]);
+      cg_comment("jump out of while");
+      cg_jump("je", labId);
+      free_reg(r);
+      genAST(root->children[1]);
+      cg_comment("loop jump");
+      cg_jump(NULL, labId-1);
+      cg_label();
+      break;
+    case GLUE:
+      genAST(root->children[0]);
+      genAST(root->children[1]);
+      break;
+    case RETURN:
+      cg_return(cg_eval(root->children[0]), root->children[0]->type);
+      break;
+    case CALL:
+      free_reg(cg_call(cg_eval(root->children[1]), root->children[0]->attr.id));
+      break;
+    default:
+      fprintf(stderr, "Internal Error: unknown sibling type %d\n", root->tok);
+      exit(1);
   }
   genAST(root->sibling);
 }
