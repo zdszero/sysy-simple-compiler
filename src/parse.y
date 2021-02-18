@@ -55,8 +55,8 @@ declaration : var_declaraton   { $$ = $1; }
 var_declaraton : type_specifier var_list SEMI
                  { $$ = mkTreeNode(DECL);
                    for (TreeNode *t = $2; t != NULL; t = t->sibling) {
-                     setIdentType($$->attr.id, $1->type);
-                     $$->type = $1->type;
+                     setIdentType(t->attr.id, $1->type);
+                     t->type = $1->type;
                      if (t->children[0])
                        typeCheck_Assign(t, t->children[0]);
                    }

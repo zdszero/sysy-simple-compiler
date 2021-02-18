@@ -68,6 +68,8 @@ int newIdent(char *s, int kind, int type) {
   SymTab[Symbols].name = strdup(s);
   SymTab[Symbols].kind = kind;
   SymTab[Symbols].type = type;
+  SymTab[Symbols].dimcount = 0;
+  SymTab[Symbols].length = 1;
   return Symbols++;
 }
 
@@ -105,6 +107,15 @@ DimRec *getIdentDim(int id) {
   return SymTab[id].first;
 }
 
+int getDimCount(int id) {
+  return SymTab[id].dimcount;
+}
+
+
+int getIdentLength(int id) {
+  return SymTab[id].length;
+}
+
 void setDimension(int id, int lev, int val) {
   DimRec *p = SymTab[id].first;
   for (int i = 1; i < lev; i++) {
@@ -124,6 +135,8 @@ void addDimension(int id, int d) {
     for (p = SymTab[id].first; p->next; p = p->next);
     p->next = dr;
   }
+  SymTab[id].dimcount++;
+  SymTab[id].length *= d;
 }
 
 int getDimension(int id, int lev) {

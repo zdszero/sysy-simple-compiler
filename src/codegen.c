@@ -118,31 +118,77 @@ static int cg_loadglob(int id) {
   return r;
 }
 
-static void cg_globsym(int id) {
-  int type = getIdentType(id);
-  char *name = getIdentName(id);
-  fprintf(Outfile, "\t.data\n");
-  fprintf(Outfile, "\t.globl\t%s\n", name);
+static void cg_type(int type, int val) {
   switch (type) {
     case T_Char:
-      fprintf(Outfile, "%s:\t.byte\t0\n", name);
+      fprintf(Outfile, "\t.byte\t%d\n", val);
       break;
     case T_Int:
-      fprintf(Outfile, "%s:\t.long\t0\n", name);
+      fprintf(Outfile, "\t.long\t%d\n", val);
       break;
     case T_Long:
     case T_Charptr:
     case T_Intptr:
     case T_Longptr:
-      fprintf(Outfile, "%s:\t.quad\t0\n", name);
+      fprintf(Outfile, "\t.quad\t%d\n", val);
       break;
     default:
-      fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
+      fprintf(stderr, "Internal Error: undefined data type %d\n", type);
       exit(1);
       break;
   }
 }
 
+static void cg_glob_var(int id) {
+  int type = getIdentType(id);
+  char *name = getIdentName(id);
+  fprintf(Outfile, "\t.data\n");
+  fprintf(Outfile, "\t.globl\t%s\n", name);
+  fprintf(Outfile, "%s:", name);
+  cg_type(type, 0);
+}
+
+static void array_dfs(TreeNode *root, int level, int count, int id) {
+  if (!root)
+    return;
+  int tok = root->tok;
+  int type = root->type;
+  int val = root->attr.val;
+  if (tok == NUM) {
+    int dims = getDimCount(id);
+    cg_type(type, val);
+    if (level < dims) {
+      array_dfs(root->sibling, level, count, id);
+    } else {
+      if (root->sibling) {
+        array_dfs(root->sibling, level, count+1, id);
+      } else if (count < dims) {
+        while (count < dims) {
+          cg_type(type, 0);
+          count++;
+        }
+      }
+    }
+  } else if (tok == LEVEL) {
+    array_dfs(root->children[0], level+1, count, id);
+    array_dfs(root->sibling, level, count, id);
+  }
+}
+
+static void cg_glob_array(TreeNode *root) {
+  int id = root->attr.id;
+  char *name = getIdentName(id);
+  fprintf(Outfile, "%s:", name);
+  if (!root->children[0] || !root->children[0]->children[0]) {
+    int len = getIdentLength(id);
+    int type = root->type;
+    for (int i = 0; i < len; i++) {
+      cg_type(type, 0);
+    }
+  } else {
+    array_dfs(root->children[0], 0, 0, id);
+  }
+}
 
 static void cg_assign(int id, int r) {
   int type = getIdentType(id);
@@ -328,9 +374,16 @@ static void genAST(TreeNode *root) {
     cg_func_postamble();
   } else if (root->tok == DECL) {
     for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
-      cg_globsym(t->attr.id);
-      if (t->children[0])
-        cg_assign(t->attr.id, cg_eval(t->children[0]));
+      int kind = getIdentKind(t->attr.id);
+      if (kind == Sym_Var) {
+        cg_glob_var(t->attr.id);
+        if (t->children[0])
+          cg_assign(t->attr.id, cg_eval(t->children[0]));
+      } else if (kind == Sym_Array) {
+        cg_glob_array(t);
+      } else {
+        fprintf(stderr, "Internal Error: wrong kind after decl codgen\n");
+      }
     }
     fprintf(Outfile, "\t.text\n");
   } else if (root->tok == ASSIGN) {

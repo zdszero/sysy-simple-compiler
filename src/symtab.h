@@ -16,6 +16,8 @@ typedef struct symRec {
   char *name;
   int type;
   int kind;  // variable or function
+  int dimcount;
+  int length;
   DimRec *first;
 } SymRec;
 
@@ -23,9 +25,11 @@ int newIdent(char *t, int kind, int type);
 int getIdentId(char *);
 int getIdentType(int id);
 int getIdentKind(int id);
+int getIdentLength(int id);
 char *getIdentName(int id);
 DimRec *getIdentDim(int id);
 int getDimension(int id, int lev);
+int getDimCount(int id);
 void setIdentType(int id, int type);
 void setIdentKind(int id, int kind);
 void setDimension(int id, int lev, int val);

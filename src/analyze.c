@@ -38,17 +38,20 @@ static void checkLength(TreeNode *root, int id, int level) {
     return;
   int len = 0;
   int limit = getDimension(id, level);
-  for (TreeNode *t = root; t; t = t->sibling)
+  int dims = getDimCount(id);
+  TreeNode *t;
+  for (t = root; t; t = t->sibling)
     len++;
   /* auto detect the first dimension if it is not explicitily declared */
   if (level == 1 && limit == 0) {
     setDimension(id, level, len);
-  } else if (len > limit) {
+  } else if (level == dims && len > limit) {
     fprintf(stderr, "Error: excess elements in array initializer in line %d\n", lineno);
     exit(1);
   }
-  for (TreeNode *t = root; t; t = t->sibling)
-    checkLength(root->children[0], id, level+1);
+  for (t = root; t; t = t->sibling) {
+    checkLength(t->children[0], id, level+1);
+  }
 }
 
 void checkArray(TreeNode *root) {
@@ -61,7 +64,7 @@ void checkArray(TreeNode *root) {
     };
     return;
   }
-  checkLength(root->children[0]->children[0], root->attr.id, 1);
+  checkLength(root->children[0], root->attr.id, 0);
 }
 
 /* check type when assigning */
