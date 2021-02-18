@@ -92,7 +92,6 @@ var_init : var
            { $$ = $1;
              setIdentKind($$->attr.id, Sym_Array);
              $$->children[0] = $3;
-             checkArray($$);
            }
          ;
 

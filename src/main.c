@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 int traceScan = 0;
-int traceParse = 1;
+int traceParse = 0;
 int generateCode = 1;
 
 FILE *Infile, *Outfile;

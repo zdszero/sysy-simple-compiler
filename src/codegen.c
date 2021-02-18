@@ -5,6 +5,10 @@
 
 #define REGCOUNT 12
 
+enum {
+  SEC_Data, SEC_Text
+};
+
 /* 0: busy     1: free */
 static int regs[REGCOUNT];
 static char *reglist[REGCOUNT] = {"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi", "%r8", "%r9", "%r10", "%r11"};
@@ -16,6 +20,21 @@ enum {RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11};
 static int labId = 1;
 static int isAssign = 1;
 static int comment = 1;
+static int curSec = -1;
+
+static void cg_section_text() {
+  if (curSec == SEC_Text)
+    return;
+  fprintf(Outfile, "\t.text\n");
+  curSec = SEC_Text;
+}
+
+static void cg_section_data() {
+  if (curSec == SEC_Data)
+    return;
+  fprintf(Outfile, "\t.data\n");
+  curSec = SEC_Data;
+}
 
 static void cg_comment(char *msg) {
   if (comment) {
@@ -58,7 +77,6 @@ static void cg_preamble() {
 
 void cg_func_preamble(char *name) {
   fprintf (Outfile,
-    "\t.text\n"
     "\t.globl\t%s\n"
     "\t.type\t%s, @function\n"
     "%s:\n"
@@ -142,51 +160,42 @@ static void cg_type(int type, int val) {
 static void cg_glob_var(int id) {
   int type = getIdentType(id);
   char *name = getIdentName(id);
-  fprintf(Outfile, "\t.data\n");
   fprintf(Outfile, "\t.globl\t%s\n", name);
   fprintf(Outfile, "%s:", name);
   cg_type(type, 0);
 }
 
-static void array_dfs(TreeNode *root, int level, int count, int id) {
-  if (!root)
-    return;
-  int tok = root->tok;
-  int type = root->type;
-  int val = root->attr.val;
-  if (tok == NUM) {
-    int dims = getDimCount(id);
-    cg_type(type, val);
-    if (level < dims) {
-      array_dfs(root->sibling, level, count, id);
+static int array_dfs(TreeNode *t, int type, int id, int level) {
+  if (!t)
+    return 0;
+  int total = getArrayTotal(id, level);
+  int count = 0;
+  while (t) {
+    if (t->tok == LEVEL) {
+      count += array_dfs(t->children[0], type, id, level+1);
     } else {
-      if (root->sibling) {
-        array_dfs(root->sibling, level, count+1, id);
-      } else if (count < dims) {
-        while (count < dims) {
-          cg_type(type, 0);
-          count++;
-        }
-      }
+      cg_type(type, t->attr.val);
+      count++;
     }
-  } else if (tok == LEVEL) {
-    array_dfs(root->children[0], level+1, count, id);
-    array_dfs(root->sibling, level, count, id);
+    t = t->sibling;
   }
+  while (count < total) {
+    cg_type(type, 0);
+    count++;
+  }
+  return total;
 }
 
 static void cg_glob_array(TreeNode *root) {
   int id = root->attr.id;
   char *name = getIdentName(id);
   fprintf(Outfile, "%s:", name);
-  if (!root->children[0] || !root->children[0]->children[0]) {
-    int len = getIdentLength(id);
-    int type = root->type;
-    for (int i = 0; i < len; i++) {
-      cg_type(type, 0);
-    }
-  } else {
-    array_dfs(root->children[0], 0, 0, id);
+  int type = root->type;
+  int count = array_dfs(root->children[0], type, id, 0);
+  int total = getArrayTotal(id, 1);
+  while (count < total) {
+    cg_type(type, 0);
+    count++;
   }
 }
 
@@ -366,6 +375,10 @@ static int cg_eval(TreeNode *root) {
 static void genAST(TreeNode *root) {
   if (!root)
     return;
+  if (root->tok == DECL)
+    cg_section_data();
+  else
+    cg_section_text();
   if (root->tok == FUNC) {
     cg_comment("function preamble");
     cg_func_preamble(getIdentName(root->children[0]->attr.id));
@@ -373,6 +386,7 @@ static void genAST(TreeNode *root) {
     cg_comment("function postamble");
     cg_func_postamble();
   } else if (root->tok == DECL) {
+    cg_comment("declaration begin");
     for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
       int kind = getIdentKind(t->attr.id);
       if (kind == Sym_Var) {
@@ -385,7 +399,7 @@ static void genAST(TreeNode *root) {
         fprintf(stderr, "Internal Error: wrong kind after decl codgen\n");
       }
     }
-    fprintf(Outfile, "\t.text\n");
+    cg_comment("declaration end");
   } else if (root->tok == ASSIGN) {
     cg_comment("assign");
     isAssign = 1;

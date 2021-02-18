@@ -72,14 +72,6 @@ char *getTokenName(int val) {
   return NULL;
 }
 
-static void printDimension(DimRec *dim) {
-  putchar('(');
-  for (DimRec *p = dim; p; p = p->next) {
-    printf("%d,", p->dim);
-  }
-  putchar(')');
-}
-
 void printToken(int tok) {
   if (tok == IDENT) {
     if (tmp) {
@@ -93,7 +85,7 @@ void printToken(int tok) {
           break;
         case Sym_Array:
           printf("array");
-          printDimension(getIdentDim(tmp->attr.id));
+          printDimension(tmp->attr.id);
           break;
         default:
           printf("error");

@@ -68,8 +68,7 @@ int newIdent(char *s, int kind, int type) {
   SymTab[Symbols].name = strdup(s);
   SymTab[Symbols].kind = kind;
   SymTab[Symbols].type = type;
-  SymTab[Symbols].dimcount = 0;
-  SymTab[Symbols].length = 1;
+  SymTab[Symbols].arr = NULL;
   return Symbols++;
 }
 
@@ -103,46 +102,50 @@ int getIdentKind(int id) {
   return SymTab[id].kind;
 }
 
-DimRec *getIdentDim(int id) {
-  return SymTab[id].first;
-}
-
-int getDimCount(int id) {
-  return SymTab[id].dimcount;
-}
-
-
-int getIdentLength(int id) {
-  return SymTab[id].length;
-}
-
-void setDimension(int id, int lev, int val) {
-  DimRec *p = SymTab[id].first;
-  for (int i = 1; i < lev; i++) {
-    p = p->next;
+int getArrayTotal(int id, int level) {
+  DimRec *tmp = SymTab[id].arr->first;
+  for (int i = 1; i < level; i++)
+    tmp = tmp->next;
+  int ans = 1;
+  while (tmp) {
+    ans *= tmp->dim;
+    tmp = tmp->next;
   }
-  p->dim = val;
+  return ans;
+}
+
+void printDimension(int id) {
+  DimRec *tmp = SymTab[id].arr->first;
+  fprintf(Outfile, "(");
+  while (tmp) {
+    fprintf(Outfile, "%d,", tmp->dim);
+    tmp = tmp->next;
+  }
+  fprintf(Outfile, ")");
+}
+
+void setDimension(int id, int level, int val) {
+  DimRec *tmp = SymTab[id].arr->first;
+  for (int i = 1; i < level; i++)
+    tmp = tmp->next;
+  tmp->dim = val;
 }
 
 void addDimension(int id, int d) {
   DimRec *dr = (DimRec *) malloc(sizeof(DimRec));
   dr->dim = d;
   dr->next = NULL;
-  if (!SymTab[id].first) {
-    SymTab[id].first = dr;
-  } else {
-    DimRec *p;
-    for (p = SymTab[id].first; p->next; p = p->next);
-    p->next = dr;
+  if (!SymTab[id].arr) {
+    SymTab[id].arr = (ArrayRec *) malloc(sizeof(ArrayRec));
+    SymTab[id].arr->dims = 0;
   }
-  SymTab[id].dimcount++;
-  SymTab[id].length *= d;
-}
-
-int getDimension(int id, int lev) {
-  DimRec *p = SymTab[id].first;
-  for (int i = 1; i < lev; i++) {
-    p = p->next;
+  DimRec *tmp = SymTab[id].arr->first;
+  SymTab[id].arr->dims++;
+  if (!tmp)
+    SymTab[id].arr->first = dr;
+  else {
+    while (tmp->next)
+      tmp = tmp->next;
+    tmp->next = dr;
   }
-  return p->dim;
 }
