@@ -102,6 +102,13 @@ int getIdentKind(int id) {
   return SymTab[id].kind;
 }
 
+int getArrayDimension(int id, int d) {
+  DimRec *tmp = SymTab[id].arr->first;
+  for (int i = 1; i < d; i++)
+    tmp = tmp->next;
+  return tmp->dim;
+}
+
 int getArrayTotal(int id, int level) {
   DimRec *tmp = SymTab[id].arr->first;
   for (int i = 1; i < level; i++)
@@ -112,6 +119,17 @@ int getArrayTotal(int id, int level) {
     tmp = tmp->next;
   }
   return ans;
+}
+
+int getArrayDims(int id) {
+  return SymTab[id].arr->dims;
+}
+
+void setArrayDimension(int id, int d, int val) {
+  DimRec *tmp = SymTab[id].arr->first;
+  for (int i = 1; i < d; i++)
+    tmp = tmp->next;
+  tmp->dim = val;
 }
 
 void printDimension(int id) {

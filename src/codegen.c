@@ -109,29 +109,57 @@ static int cg_loadnum(long value) {
   return r;
 }
 
-static int cg_loadglob(int id) {
-  int r = allocate_reg();
-  int type = getIdentType(id);
-  char *name = getIdentName(id);
+static int getTypeSize(int type) {
   switch (type) {
     case T_Char:
-      fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", name, breglist[r]);
-      break;
+      return 1;
     case T_Int:
-      fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", name, lreglist[r]);
-      break;
+      return 4;
     case T_Long:
     case T_Charptr:
     case T_Intptr:
     case T_Longptr:
-      fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", name, reglist[r]);
-      break;
-      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
-      break;
+      return 8;
     default:
-      fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
+      fprintf(stderr, "Internal Error: unrecgnozied type %d\n", type);
       exit(1);
-      break;
+  }
+}
+
+static int cg_loadglob(TreeNode *t) {
+  cg_comment("load global");
+  int id = t->attr.id;
+  int r = allocate_reg();
+  int size = getTypeSize(getIdentType(id));
+  char *name = getIdentName(id);
+  if (t->children[0]) {
+    int idx = 0, depth = 1;
+    TreeNode *tmp = t->children[0];
+    while (tmp) {
+      idx += tmp->attr.val * getArrayTotal(id, depth+1);
+      tmp = tmp->sibling;
+      depth++;
+    }
+    int r1 = allocate_reg(), r2 = allocate_reg();
+    fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r1]);
+    fprintf(Outfile, "\tmovq\t$%d, %s\n", idx, reglist[r2]);
+    if (size == 1) {
+      fprintf(Outfile, "\tmovb\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, breglist[r]);
+    } else if (size == 4) {
+      fprintf(Outfile, "\tmovl\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, lreglist[r]);
+    } else if (size == 8) {
+      fprintf(Outfile, "\tmovq\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, reglist[r]);
+    }
+    free_reg(r1);
+    free_reg(r2);
+  } else {
+    if (size == 1) {
+      fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", name, breglist[r]);
+    } else if (size == 4) {
+      fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", name, lreglist[r]);
+    } else if (size == 8) {
+      fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", name, reglist[r]);
+    }
   }
   return r;
 }
@@ -327,6 +355,8 @@ static int cg_eval(TreeNode *root) {
     int r = allocate_reg();
     fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", getIdentName(root->children[0]->attr.id), reglist[r]);
     return r;
+  } else if (root->tok == IDENT) {
+      return cg_loadglob(root);
   }
   int leftreg, rightreg;
   /* recursion for both left and right */
@@ -343,18 +373,11 @@ static int cg_eval(TreeNode *root) {
       return cg_loadnum(root->attr.val);
     case CH:
       return cg_loadnum(((int) root->attr.ch));
-    case IDENT:
-      return cg_loadglob(root->attr.id);
     case EQ:
-      return cg_compare(leftreg, rightreg, root->tok-EQ);
     case NE:
-      return cg_compare(leftreg, rightreg, root->tok-EQ);
     case GT:
-      return cg_compare(leftreg, rightreg, root->tok-EQ);
     case GE:
-      return cg_compare(leftreg, rightreg, root->tok-EQ);
     case LT:
-      return cg_compare(leftreg, rightreg, root->tok-EQ);
     case LE:
       return cg_compare(leftreg, rightreg, root->tok-EQ);
     case PLUS:
