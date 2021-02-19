@@ -4,9 +4,9 @@ int  *e;
 int main() {
   int a, b = 3, c;
   c= 5; a= b + c * 10;
-  printint(a);
+  putint(a);
 
-  d= 12; printint(d);
-  e= &d; f= *e; printint(f);
+  d= 12; putint(d);
+  e= &d; f= *e; putint(f);
   return(0);
 }

@@ -3,7 +3,7 @@ void main() {
   int sum = 0;
   while (i <= 10) {
     sum = sum + i;
-    printint(sum);
+    putint(sum);
     i = i+1;
   }
 }

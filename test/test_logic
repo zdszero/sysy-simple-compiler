@@ -2,14 +2,14 @@ int main() {
     int a = 3;
     int b = 5;
     if (a > b || a < 4) {
-        printint(1);
+        putint(1);
     } else {
-        printint(0);
+        putint(0);
     }
     if (a < b && a == 2) {
-        printint(1);
+        putint(1);
     } else {
-        printint(0);
+        putint(0);
     }
     return 0;
 }

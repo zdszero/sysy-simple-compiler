@@ -6,8 +6,8 @@ long  g;
 long *h;
 
 int main() {
-  c= 12; d=18; printint(c);
-  e= &c + 1; f= *e; printint(f);
-  g = 24; h = &g; printint(*h);
+  c= 12; d=18; putint(c);
+  e= &c + 1; f= *e; putint(f);
+  g = 24; h = &g; putint(*h);
   return(0);
 }

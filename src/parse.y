@@ -11,7 +11,6 @@
   int yylex();
   void yyerror(const char *);
   TreeNode *syntaxTree;
-  int arrlen = 1;
 %}
 
 %define api.value.type { TreeNode * }
@@ -96,19 +95,17 @@ var_init : var
            }
          ;
 
-array : array LS NUM RS
+array : array LS expression RS
         { $$ = $1;
           addDimension($$->attr.id, Tok.numval);
-          arrlen *= Tok.numval;
         }
-      | var LS NUM RS
+      | var LS expression RS
         { $$ = $1;
           if (Tok.numval <= 0) {
             fprintf(stderr, "Error: array cannot be declared with a negative size in line %d\n", lineno);
             exit(1);
           }
           addDimension($$->attr.id, Tok.numval);
-          arrlen *= Tok.numval;
         }
       | var LS RS
         { $$ = $1;

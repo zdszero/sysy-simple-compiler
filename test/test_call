@@ -3,10 +3,10 @@ int foo() {
 }
 
 int main() {
-  printint(20);
+  putint(20);
   int result;
   result = foo(15);
-  printint(result);
-  printint(result + foo(foo(15)));
+  putint(result);
+  putint(result + foo(foo(15)));
   return 0;
 }

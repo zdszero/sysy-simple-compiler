@@ -1,9 +1,0 @@
-void main() {
-  char ch = 'a';
-  int num = 97;
-  if (ch == num) {
-    printint(1);
-  } else {
-    printint(0);
-  }
-}

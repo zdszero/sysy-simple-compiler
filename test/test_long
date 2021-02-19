@@ -1,5 +1,0 @@
-int main() {
-  long lnum = 0x11ffffffff;
-  printint(lnum);
-  return 0;
-}

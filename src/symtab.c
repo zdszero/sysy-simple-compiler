@@ -6,6 +6,9 @@ SymRec SymTab[NSYMBOLS];
 
 static int Symbols = 0;
 static int isFirstTime = 1;
+static char *builtinFn[] = {
+  "putint", "putchar", "putlong", "putarray"
+};
 
 int pointerTo(int type) {
   int newtype;
@@ -53,17 +56,14 @@ int valueAt(int type) {
 
 int newIdent(char *s, int kind, int type) {
   if (isFirstTime) {
-    SymTab[0].name = "printchar";
-    SymTab[0].type = T_Void;
-    SymTab[0].kind = Sym_Func;
-    SymTab[1].name = "printint";
-    SymTab[1].type = T_Void;
-    SymTab[1].kind = Sym_Func;
-    SymTab[2].name = "printlong";
-    SymTab[2].type = T_Void;
-    SymTab[2].kind = Sym_Func;
+    int size = sizeof(builtinFn) / sizeof(char *);
+    for (int i = 0; i < size; i++) {
+      SymTab[i].name = builtinFn[i];
+      SymTab[i].kind = Sym_Func;
+      SymTab[i].type = T_Void;
+    }
     isFirstTime = 0;
-    Symbols = 3;
+    Symbols = size;
   }
   SymTab[Symbols].name = strdup(s);
   SymTab[Symbols].kind = kind;

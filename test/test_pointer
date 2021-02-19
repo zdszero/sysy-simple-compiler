@@ -8,10 +8,10 @@ int main() {
   int  *e;
   int   f;
 
-  a= 97; printchar(a);
-  b= &a; c= *b; printchar(c);
+  a= 97; putch(a);
+  b= &a; c= *b; putch(c);
 
-  d= 12; printint(d);
-  e= &d; f= *e; printint(f);
+  d= 12; putint(d);
+  e= &d; f= *e; putint(f);
   return(0);
 }
