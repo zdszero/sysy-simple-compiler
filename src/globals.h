@@ -12,6 +12,10 @@ enum {
   T_Voidptr, T_Intptr, T_Charptr, T_Longptr
 };
 
+enum {
+  Scope_Glob, Scope_Local
+};
+
 typedef struct treeNode {
   struct treeNode *children[CHILDNUM];
   struct treeNode *sibling;
@@ -39,5 +43,6 @@ extern FILE *Infile, *Outfile;
 extern int lineno;
 extern Token Tok;
 extern TreeNode *syntaxTree;
+extern int scopeAttr;
 
 #endif

@@ -13,6 +13,7 @@
   int lineno = 1;
   extern int traceScan;
   static int isFirstTime = 1;
+  int scopeAttr;
 %}
 
 quote      \'
@@ -60,8 +61,20 @@ space      [ \t]+
 \n            { lineno++;         }
 <<EOF>>       { return YYEOF;     }
 {space}       { /* skip */        }
-{number}      { return NUM;       }
-{identifier}  { return IDENT;     }
+{number}      { if (yytext[0] == '0' && (yytext[1] == 'x' || yytext[1] == 'X')) {
+                  Tok.numval = strtol(yytext, NULL, 16);
+                }
+                else {
+                  Tok.numval = strtol(yytext, NULL, 10);
+                }
+                return NUM;       }
+{identifier}  { strcpy(Tok.text, yytext);
+                char c;
+                while (isspace(c = input()));
+                if (c == '(')
+                  scopeAttr = Scope_Local;
+                unput(c);
+                return IDENT;     }
 {quote}       { char c;
                 if (!isascii(c = input()))
                   return YYUNDEF;
@@ -93,16 +106,6 @@ void scan() {
     yyout = Outfile;
   }
   Tok.token = scan_yylex();
-  if (Tok.token == IDENT) {
-    strcpy(Tok.text, yytext);
-  } else if (Tok.token == NUM) {
-    if (yytext[0] == '0' && (yytext[1] == 'x' || yytext[1] == 'X')) {
-      Tok.numval = strtol(yytext, NULL, 16);
-    }
-    else {
-      Tok.numval = strtol(yytext, NULL, 10);
-    }
-  }
   if (traceScan)
     printToken(Tok.token);
 }

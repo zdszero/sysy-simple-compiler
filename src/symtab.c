@@ -5,6 +5,7 @@
 SymRec SymTab[NSYMBOLS];
 
 static int Symbols = 0;
+static int Locals = NSYMBOLS - 1;
 static int isFirstTime = 1;
 static char *builtinFn[] = {
   "putint", "putchar", "putlong", "putarray"
@@ -54,22 +55,32 @@ int valueAt(int type) {
   return newtype;
 }
 
-int newIdent(char *s, int kind, int type) {
+int newIdent(char *s, int kind, int type, int scope) {
   if (isFirstTime) {
     int size = sizeof(builtinFn) / sizeof(char *);
     for (int i = 0; i < size; i++) {
       SymTab[i].name = builtinFn[i];
       SymTab[i].kind = Sym_Func;
       SymTab[i].type = T_Void;
+      SymTab[i].scope = Scope_Glob;
     }
     isFirstTime = 0;
     Symbols = size;
   }
-  SymTab[Symbols].name = strdup(s);
-  SymTab[Symbols].kind = kind;
-  SymTab[Symbols].type = type;
-  SymTab[Symbols].arr = NULL;
-  return Symbols++;
+  int idx;
+  if (scope == Scope_Glob)
+    idx = Symbols++;
+  else
+    idx = Locals--;
+  if (Locals < Symbols) {
+    fprintf(stderr, "Error: run out of symbols\n");
+    exit(1);
+  }
+  SymTab[idx].name = strdup(s);
+  SymTab[idx].kind = kind;
+  SymTab[idx].type = type;
+  SymTab[idx].arr = NULL;
+  return idx;
 }
 
 void setIdentType(int id, int type) {
@@ -83,10 +94,12 @@ void setIdentKind(int id, int kind) {
 /* find identifier in symbol table and return its index */
 int getIdentId(char *s) {
   int i;
-  for (i = 0; i < Symbols && SymTab[i].name != NULL; i++) {
+  for (i = NSYMBOLS-1; i > Locals && SymTab[i].name != NULL; i--)
     if (strcmp(s, SymTab[i].name) == 0)
       return i;
-  }
+  for (i = 0; i < Symbols && SymTab[i].name != NULL; i++)
+    if (strcmp(s, SymTab[i].name) == 0)
+      return i;
   return -1;
 }
 
@@ -166,4 +179,14 @@ void addDimension(int id, int d) {
       tmp = tmp->next;
     tmp->next = dr;
   }
+}
+
+void printSymTab() {
+  printf("Globals:\n");
+  for (int i = 0; i < Symbols; i++)
+    printf("%s -> ", SymTab[i].name);
+  printf("\nLocals\n");
+  for (int i = NSYMBOLS-1; i > Locals; i--)
+    printf("%s -> ", SymTab[i].name);
+  putchar('\n');
 }

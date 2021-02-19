@@ -117,7 +117,7 @@ var : IDENT
       { $$ = mkTreeNode(IDENT);
         if (getIdentId(Tok.text) == -1) {
           /* cannot resolve symbol kind and type for now */
-          $$->attr.id = newIdent(Tok.text, Sym_Unknown, T_None);
+          $$->attr.id = newIdent(Tok.text, Sym_Unknown, T_None, scopeAttr);
         }
         else {
           fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
@@ -199,6 +199,7 @@ func_declaration : type_specifier var LP RP compound_statement
                      $$->children[0] = $2; $$->children[1] = $5;
                      typeCheck_HasReturn($1, $5, $2->attr.id);
                      free($1);
+                     scopeAttr = Scope_Glob;
                    }
                  ;
 

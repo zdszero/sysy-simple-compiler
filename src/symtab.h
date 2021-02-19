@@ -21,10 +21,11 @@ typedef struct symRec {
   char *name;
   int type;
   int kind;  // variable or function
+  int scope;
   ArrayRec *arr;
 } SymRec;
 
-int newIdent(char *t, int kind, int type);
+int newIdent(char *t, int kind, int type, int scope);
 int getIdentId(char *);
 int getIdentType(int id);
 int getIdentKind(int id);

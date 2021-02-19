@@ -5,9 +5,11 @@
 #include "codegen.h"
 #include <stdlib.h>
 
+extern void printSymTab();
 int traceScan = 0;
-int traceParse = 0;
-int generateCode = 1;
+int traceParse = 1;
+int traceSymbols = 1;
+int generateCode = 0;
 
 FILE *Infile, *Outfile;
 
@@ -25,8 +27,12 @@ int main(int argc, char *argv[])
   Outfile = stdout;
   Tok.token = -1;
   yyparse();
-  if (traceParse)
+  if (traceParse) {
     printTree(syntaxTree, 0);
+  }
+  if (traceSymbols) {
+    printSymTab();
+  }
   if (generateCode)
     genCode(syntaxTree);
   return 0;
