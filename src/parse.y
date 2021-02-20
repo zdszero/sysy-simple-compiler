@@ -11,6 +11,7 @@
   int yylex();
   void yyerror(const char *);
   TreeNode *syntaxTree;
+  /* stack frame all symbol size count, negative value */
   static int localOffset;
 %}
 
@@ -164,17 +165,15 @@ var_ref : TIMES var_ref
             $$->children[0] = $1;
             $$->children[1] = $3;
           }
-        | var_ref LS NUM RS
+        | var_ref LS expression RS
           { $$ = $1;
             YYSTYPE t = $$->children[0];
             if (!t) {
-              $$->children[0] = mkTreeNode(NUM);
-              $$->children[0]->attr.val = Tok.numval;
+              $$->children[0] = $3;
             } else {
               while (t->sibling)
                 t = t->sibling;
-              t->sibling = mkTreeNode(NUM);
-              t->sibling->attr.val = Tok.numval;
+              t->sibling = $3;
             }
           }
         | IDENT
@@ -204,10 +203,16 @@ func_declaration : type_specifier var LP RP compound_statement
                      /* resolve offset for each symbol */
                      for (TreeNode *t = $5; t; t = t->sibling) {
                        if (t->tok == DECL) {
-                         int type = t->children[0]->type;
-                         int size = getTypeSize(type);
-                         localOffset -= size;
-                         setIdentOffset(t->children[0]->attr.id, localOffset);
+                         for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
+                           int type = tmp->type;
+                           int id = tmp->attr.id;
+                           int size = getTypeSize(type);
+                           /* array */
+                           if (getIdentKind(id) == Sym_Array)
+                             size *= getArrayTotal(id, 0);
+                           localOffset -= size;
+                           setIdentOffset(tmp->attr.id, localOffset);
+                         }
                        }
                      }
                      setIdentOffset($2->attr.id, localOffset);

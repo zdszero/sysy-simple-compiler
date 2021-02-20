@@ -1,0 +1,21 @@
+int main() {
+    int a[10] = {
+        32, 24, 6, 15, 44,
+        94, 3, 54, 86, 21
+    };
+    int tmp, i, j;
+
+    for (i = 0; i < 10; i = i+1) {
+        for (j = i+1; j < 10; j = j+1) {
+            if (a[j] < a[i]) {
+                tmp = a[i];
+                a[j] = a[i];
+                a[i] = tmp;
+            }
+        }
+    }
+    for (i = 0; i < 10; i = i+1) {
+        putint(a[i]);
+    }
+    return 0;
+}

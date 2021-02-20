@@ -1,7 +1,9 @@
 void main() {
   int i = 1;
+  int a[3] = {10, 4, 2};
+  int j = 0;
   int sum = 0;
-  while (i <= 10) {
+  while (i <= a[j]) {
     sum = sum + i;
     putint(sum);
     i = i+1;

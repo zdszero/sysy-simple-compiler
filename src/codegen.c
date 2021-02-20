@@ -23,6 +23,16 @@ static int isAssign = 1;
 static int comment = 1;
 static int curSec = -1;
 
+/********************************
+ *  function declaration        *
+ ********************************/
+
+static int cg_eval(TreeNode *root);
+
+/********************************
+ *  function implementation     *
+ ********************************/
+
 static void cg_section_text() {
   if (curSec == SEC_Text)
     return;
@@ -125,41 +135,35 @@ static int cg_loadvar(TreeNode *t) {
   if (t->children[0]) {
     cg_comment("load array element");
     /* get the index */
-    int idx = 0, depth = 1;
-    TreeNode *tmp = t->children[0];
-    while (tmp) {
-      idx += tmp->attr.val * getArrayTotal(id, depth+1);
-      tmp = tmp->sibling;
+    int depth = 1;
+    int r2 = allocate_reg(); // index reg
+    fprintf(Outfile, "\tmovq\t$0, %s\n", reglist[r2]);
+    for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
+      int dim = getArrayTotal(id, depth+1);
+      int tmpr = cg_eval(tmp);
+      if (dim > 1)
+        fprintf(Outfile, "\timulq\t$%d, %s\n", dim, reglist[tmpr]);
+      fprintf(Outfile, "\taddq\t%s, %s\n", reglist[tmpr], reglist[r2]);
+      free_reg(tmpr);
       depth++;
     }
-    /* global array */
+    int r1 = allocate_reg();
+    // r1: &a[0]   r2: index
     if (scope == Scope_Glob) {
-      cg_comment("load global");
-      int r1 = allocate_reg(), r2 = allocate_reg();
-      // r1: &a[0]   r2: index
       fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r1]);
-      fprintf(Outfile, "\tmovq\t$%d, %s\n", idx, reglist[r2]);
-      if (size == 1) {
-        fprintf(Outfile, "\tmovb\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, breglist[r]);
-      } else if (size == 4) {
-        fprintf(Outfile, "\tmovl\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, lreglist[r]);
-      } else if (size == 8) {
-        fprintf(Outfile, "\tmovq\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, reglist[r]);
-      }
-      free_reg(r1);
-      free_reg(r2);
-    /* local array */
-    } else if (scope == Scope_Local) {
-      int offset = getIdentOffset(id);
-      offset = -offset + size * idx;
-      if (size == 1) {
-        fprintf(Outfile, "\tmovb\t%d(%%rbp), %s\n", offset, breglist[r]);
-      } else if (size == 4) {
-        fprintf(Outfile, "\tmovl\t%d(%%rbp), %s\n", offset, lreglist[r]);
-      } else if (size == 8) {
-        fprintf(Outfile, "\tmovq\t%d(%%rbp), %s\n", offset, reglist[r]);
-      }
+    } else {
+      int startOffset = getIdentOffset(id);
+      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", startOffset, reglist[r1]);
     }
+    if (size == 1) {
+      fprintf(Outfile, "\tmovb\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, breglist[r]);
+    } else if (size == 4) {
+      fprintf(Outfile, "\tmovl\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, lreglist[r]);
+    } else if (size == 8) {
+      fprintf(Outfile, "\tmovq\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, reglist[r]);
+    }
+    free_reg(r1);
+    free_reg(r2);
   /* VARIABLE */
   } else {
     cg_comment("load variable");
@@ -227,30 +231,31 @@ static int array_glob_dfs(TreeNode *t, int type, int id, int level) {
   return total;
 }
 
-static void array_local_dfs(TreeNode *t, int base, int type, int id, int level) {
+static int array_local_dfs(TreeNode *t, int idx, int type, int id, int level) {
   if (!t)
-    return;
+    return idx;
   int size = getTypeSize(type);
-  int total = getArrayTotal(id, 0);
   int dim = getArrayDimension(id, level);
+  int base = getIdentOffset(id);
   while (t) {
     if (t->tok == LEVEL) {
-      base = (base + dim) & ~dim;
-      array_local_dfs(t->children[0], base, type, id, level+1);
+      idx = array_local_dfs(t->children[0], idx, type, id, level+1);
+      idx = (idx + dim) / dim * dim;
     } else {
       int val = t->attr.val;
-      int offset = -size * (total - base);
+      int offset = base + idx * size;
       if (size == 1) {
-        fprintf(Outfile, "\tmovb\t%d, %d(%%rbp)\n", val, offset);
+        fprintf(Outfile, "\tmovb\t$%d, %d(%%rbp)\n", val, offset);
       } else if (size == 4) {
-        fprintf(Outfile, "\tmovl\t%d, %d(%%rbp)\n", val, offset);
+        fprintf(Outfile, "\tmovl\t$%d, %d(%%rbp)\n", val, offset);
       } else if (size == 8) {
-        fprintf(Outfile, "\tmovq\t%d, %d(%%rbp)\n", val, offset);
+        fprintf(Outfile, "\tmovq\t$%d, %d(%%rbp)\n", val, offset);
       }
-      base++;
+      idx++;
     }
     t = t->sibling;
   }
+  return idx - 1;
 }
 
 static void cg_var(int id) {
@@ -278,9 +283,6 @@ static void cg_array(TreeNode *root) {
       count++;
     }
   } else {
-    int size = getTypeSize(type);
-    int offset = -size * total;
-    setIdentOffset(id, offset);
     array_local_dfs(root->children[0], 0, type, id, 0);
   }
 }

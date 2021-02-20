@@ -1,0 +1,10 @@
+int main() {
+    int a[3][3] = {
+        {3, 5},
+        {1, 2, 4},
+        3, 5
+    };
+    int i = 1;
+    putint(a[i][i * 2]);
+    return 0;
+}

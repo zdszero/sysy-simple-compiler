@@ -7,3 +7,4 @@ parse.h
 scan.c
 todo.md
 ref/**
+report/**
