@@ -6,5 +6,7 @@
 TreeNode *mkTreeNode();
 void printTree(TreeNode *, int);
 void printToken(int);
+int getTypeSize(int type);
+int alignedSize(int type);
 
 #endif

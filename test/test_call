@@ -3,10 +3,9 @@ int foo() {
 }
 
 int main() {
-  putint(20);
   int result;
   result = foo(15);
   putint(result);
-  putint(result + foo(foo(15)));
+  putint(result + foo(foo(foo(10))));
   return 0;
 }

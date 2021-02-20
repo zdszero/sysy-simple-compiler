@@ -3,6 +3,8 @@
 #include "symtab.h"
 #include <stdlib.h>
 
+extern SymRec SymTab[NSYMBOLS];
+
 static TreeNode *tmp = NULL;
 
 TreeNode *mkTreeNode(int tok) {
@@ -123,3 +125,24 @@ void printTree(TreeNode *t, int dep) {
   printTree(t->sibling, dep);
 }
 
+int getTypeSize(int type) {
+  switch (type) {
+    case T_Char:
+      return 1;
+    case T_Int:
+      return 4;
+    case T_Long:
+    case T_Charptr:
+    case T_Intptr:
+    case T_Longptr:
+      return 8;
+    default:
+      fprintf(stderr, "Internal Error: unrecgnozied type %d\n", type);
+      exit(1);
+  }
+}
+
+int alignedSize(int type) {
+  int sz = getTypeSize(type);
+  return (sz > 4 ? sz : 4);
+}

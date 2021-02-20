@@ -1,6 +1,7 @@
 #include "globals.h"
 #include "codegen.h"
 #include "symtab.h"
+#include "util.h"
 #include <stdlib.h>
 
 #define REGCOUNT 12
@@ -75,22 +76,27 @@ static void cg_preamble() {
   freeall_regs();
 }
 
-void cg_func_preamble(char *name) {
-  fprintf (Outfile,
+void cg_func_preamble(TreeNode *t) {
+  int id = t->attr.id;
+  char *name = getIdentName(id);
+  int offset = getIdentOffset(id);
+  fprintf(Outfile,
     "\t.globl\t%s\n"
     "\t.type\t%s, @function\n"
     "%s:\n"
     "\tpushq\t%%rbp\n"
-    "\tmovq\t%%rsp, %%rbp\n",
-    name, name, name);
+    "\tmovq\t%%rsp, %%rbp\n"
+    "\taddq\t$%d, %%rsp\n",
+    name, name, name, offset);
 }
 
 /* return 0 */
-static void cg_func_postamble() {
-  fputs(
-    "\tpopq\t%rbp\n"
-    "\tret\n",
-  Outfile
+static void cg_func_postamble(TreeNode *t) {
+  int offset = getIdentOffset(t->attr.id);
+  fprintf(Outfile,
+    "\taddq\t$%d, %%rsp\n"
+    "\tpopq\t%%rbp\n"
+    "\tret\n", -offset
   );
 }
 
@@ -109,30 +115,16 @@ static int cg_loadnum(long value) {
   return r;
 }
 
-static int getTypeSize(int type) {
-  switch (type) {
-    case T_Char:
-      return 1;
-    case T_Int:
-      return 4;
-    case T_Long:
-    case T_Charptr:
-    case T_Intptr:
-    case T_Longptr:
-      return 8;
-    default:
-      fprintf(stderr, "Internal Error: unrecgnozied type %d\n", type);
-      exit(1);
-  }
-}
-
-static int cg_loadglob(TreeNode *t) {
-  cg_comment("load global");
+static int cg_loadvar(TreeNode *t) {
   int id = t->attr.id;
   int r = allocate_reg();
   int size = getTypeSize(getIdentType(id));
   char *name = getIdentName(id);
+  int scope = getIdentScope(id);
+  /* ARRAY */
   if (t->children[0]) {
+    cg_comment("load array element");
+    /* get the index */
     int idx = 0, depth = 1;
     TreeNode *tmp = t->children[0];
     while (tmp) {
@@ -140,25 +132,54 @@ static int cg_loadglob(TreeNode *t) {
       tmp = tmp->sibling;
       depth++;
     }
-    int r1 = allocate_reg(), r2 = allocate_reg();
-    fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r1]);
-    fprintf(Outfile, "\tmovq\t$%d, %s\n", idx, reglist[r2]);
-    if (size == 1) {
-      fprintf(Outfile, "\tmovb\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, breglist[r]);
-    } else if (size == 4) {
-      fprintf(Outfile, "\tmovl\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, lreglist[r]);
-    } else if (size == 8) {
-      fprintf(Outfile, "\tmovq\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, reglist[r]);
+    /* global array */
+    if (scope == Scope_Glob) {
+      cg_comment("load global");
+      int r1 = allocate_reg(), r2 = allocate_reg();
+      // r1: &a[0]   r2: index
+      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r1]);
+      fprintf(Outfile, "\tmovq\t$%d, %s\n", idx, reglist[r2]);
+      if (size == 1) {
+        fprintf(Outfile, "\tmovb\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, breglist[r]);
+      } else if (size == 4) {
+        fprintf(Outfile, "\tmovl\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, lreglist[r]);
+      } else if (size == 8) {
+        fprintf(Outfile, "\tmovq\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, reglist[r]);
+      }
+      free_reg(r1);
+      free_reg(r2);
+    /* local array */
+    } else if (scope == Scope_Local) {
+      int offset = getIdentOffset(id);
+      offset = -offset + size * idx;
+      if (size == 1) {
+        fprintf(Outfile, "\tmovb\t%d(%%rbp), %s\n", offset, breglist[r]);
+      } else if (size == 4) {
+        fprintf(Outfile, "\tmovl\t%d(%%rbp), %s\n", offset, lreglist[r]);
+      } else if (size == 8) {
+        fprintf(Outfile, "\tmovq\t%d(%%rbp), %s\n", offset, reglist[r]);
+      }
     }
-    free_reg(r1);
-    free_reg(r2);
+  /* VARIABLE */
   } else {
-    if (size == 1) {
-      fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", name, breglist[r]);
-    } else if (size == 4) {
-      fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", name, lreglist[r]);
-    } else if (size == 8) {
-      fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", name, reglist[r]);
+    cg_comment("load variable");
+    if (scope == Scope_Glob) {
+      if (size == 1) {
+        fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", name, breglist[r]);
+      } else if (size == 4) {
+        fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", name, lreglist[r]);
+      } else if (size == 8) {
+        fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", name, reglist[r]);
+      }
+    } else if (scope == Scope_Local) {
+      int offset = getIdentOffset(id);
+      if (size == 1) {
+        fprintf(Outfile, "\tmovb\t%d(%%rbp), %s\n", offset, breglist[r]);
+      } else if (size == 4) {
+        fprintf(Outfile, "\tmovl\t%d(%%rbp), %s\n", offset, lreglist[r]);
+      } else if (size == 8) {
+        fprintf(Outfile, "\tmovq\t%d(%%rbp), %s\n", offset, reglist[r]);
+      }
     }
   }
   return r;
@@ -185,22 +206,14 @@ static void cg_type(int type, int val) {
   }
 }
 
-static void cg_glob_var(int id) {
-  int type = getIdentType(id);
-  char *name = getIdentName(id);
-  fprintf(Outfile, "\t.globl\t%s\n", name);
-  fprintf(Outfile, "%s:", name);
-  cg_type(type, 0);
-}
-
-static int array_dfs(TreeNode *t, int type, int id, int level) {
+static int array_glob_dfs(TreeNode *t, int type, int id, int level) {
   if (!t)
     return 0;
   int total = getArrayTotal(id, level);
   int count = 0;
   while (t) {
     if (t->tok == LEVEL) {
-      count += array_dfs(t->children[0], type, id, level+1);
+      count += array_glob_dfs(t->children[0], type, id, level+1);
     } else {
       cg_type(type, t->attr.val);
       count++;
@@ -214,38 +227,96 @@ static int array_dfs(TreeNode *t, int type, int id, int level) {
   return total;
 }
 
-static void cg_glob_array(TreeNode *root) {
-  int id = root->attr.id;
-  char *name = getIdentName(id);
-  fprintf(Outfile, "%s:", name);
-  int type = root->type;
-  int count = array_dfs(root->children[0], type, id, 0);
-  int total = getArrayTotal(id, 1);
-  while (count < total) {
+static void array_local_dfs(TreeNode *t, int base, int type, int id, int level) {
+  if (!t)
+    return;
+  int size = getTypeSize(type);
+  int total = getArrayTotal(id, 0);
+  int dim = getArrayDimension(id, level);
+  while (t) {
+    if (t->tok == LEVEL) {
+      base = (base + dim) & ~dim;
+      array_local_dfs(t->children[0], base, type, id, level+1);
+    } else {
+      int val = t->attr.val;
+      int offset = -size * (total - base);
+      if (size == 1) {
+        fprintf(Outfile, "\tmovb\t%d, %d(%%rbp)\n", val, offset);
+      } else if (size == 4) {
+        fprintf(Outfile, "\tmovl\t%d, %d(%%rbp)\n", val, offset);
+      } else if (size == 8) {
+        fprintf(Outfile, "\tmovq\t%d, %d(%%rbp)\n", val, offset);
+      }
+      base++;
+    }
+    t = t->sibling;
+  }
+}
+
+static void cg_var(int id) {
+  int type = getIdentType(id);
+  int scope = getIdentScope(id);
+  if (scope == Scope_Glob) {
+    char *name = getIdentName(id);
+    fprintf(Outfile, "\t.globl\t%s\n", name);
+    fprintf(Outfile, "%s:", name);
     cg_type(type, 0);
-    count++;
+  }
+}
+
+static void cg_array(TreeNode *root) {
+  int id = root->attr.id;
+  int type = root->type;
+  int scope = getIdentScope(id);
+  int total = getArrayTotal(id, 1);
+  if (scope == Scope_Glob) {
+    char *name = getIdentName(id);
+    fprintf(Outfile, "%s:", name);
+    int count = array_glob_dfs(root->children[0], type, id, 0);
+    while (count < total) {
+      cg_type(type, 0);
+      count++;
+    }
+  } else {
+    int size = getTypeSize(type);
+    int offset = -size * total;
+    setIdentOffset(id, offset);
+    array_local_dfs(root->children[0], 0, type, id, 0);
   }
 }
 
 static void cg_assign(int id, int r) {
   int type = getIdentType(id);
-  char *name = getIdentName(id);
-  switch (type) {
-    case T_Char:
-      fprintf(Outfile, "\tmovb\t%s, %s(%%rip)\n", breglist[r], name);
-      break;
-    case T_Int:
-      fprintf(Outfile, "\tmovl\t%s, %s(%%rip)\n", lreglist[r], name);
-      break;
-    case T_Long:
-    case T_Charptr:
-    case T_Intptr:
-    case T_Longptr:
-      fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], name);
-      break;
-    default:
-      fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
-      exit(1);
+  int scope = getIdentScope(id);
+  if (scope == Scope_Glob) {
+    char *name = getIdentName(id);
+    switch (type) {
+      case T_Char:
+        fprintf(Outfile, "\tmovb\t%s, %s(%%rip)\n", breglist[r], name);
+        break;
+      case T_Int:
+        fprintf(Outfile, "\tmovl\t%s, %s(%%rip)\n", lreglist[r], name);
+        break;
+      case T_Long:
+      case T_Charptr:
+      case T_Intptr:
+      case T_Longptr:
+        fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], name);
+        break;
+      default:
+        fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
+        exit(1);
+    }
+  } else {
+    int offset = getIdentOffset(id);
+    int size = getTypeSize(type);
+    if (size == 1) {
+      fprintf(Outfile, "\tmovb\t%s, %d(%%rbp)\n", breglist[r], offset);
+    } else if (size == 4) {
+      fprintf(Outfile, "\tmovl\t%s, %d(%%rbp)\n", lreglist[r], offset);
+    } else if (size == 8) {
+      fprintf(Outfile, "\tmovq\t%s, %d(%%rbp)\n", reglist[r], offset);
+    }
   }
   free_reg(r);
 }
@@ -356,7 +427,7 @@ static int cg_eval(TreeNode *root) {
     fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", getIdentName(root->children[0]->attr.id), reglist[r]);
     return r;
   } else if (root->tok == IDENT) {
-      return cg_loadglob(root);
+      return cg_loadvar(root);
   }
   int leftreg, rightreg;
   /* recursion for both left and right */
@@ -398,7 +469,7 @@ static int cg_eval(TreeNode *root) {
 static void genAST(TreeNode *root) {
   if (!root)
     return;
-  if (root->tok == DECL)
+  if (root->tok == DECL && getIdentScope(root->children[0]->attr.id) == Scope_Glob)
     cg_section_data();
   else
     cg_section_text();
@@ -406,26 +477,24 @@ static void genAST(TreeNode *root) {
   switch (root->tok) {
     case FUNC:
       cg_comment("function preamble");
-      cg_func_preamble(getIdentName(root->children[0]->attr.id));
+      cg_func_preamble(root->children[0]);
       genAST(root->children[1]);
       cg_comment("function postamble");
-      cg_func_postamble();
+      cg_func_postamble(root->children[0]);
       break;
     case DECL:
-      cg_comment("declaration begin");
       for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
         int kind = getIdentKind(t->attr.id);
         if (kind == Sym_Var) {
-          cg_glob_var(t->attr.id);
+          cg_var(t->attr.id);
           if (t->children[0])
             cg_assign(t->attr.id, cg_eval(t->children[0]));
         } else if (kind == Sym_Array) {
-          cg_glob_array(t);
+          cg_array(t);
         } else {
           fprintf(stderr, "Internal Error: wrong kind after decl codgen\n");
         }
       }
-      cg_comment("declaration end");
       break;
     case ASSIGN:
       cg_comment("assign");
@@ -470,6 +539,7 @@ static void genAST(TreeNode *root) {
       genAST(root->children[1]);
       break;
     case RETURN:
+      cg_comment("return");
       cg_return(cg_eval(root->children[0]), root->children[0]->type);
       break;
     case CALL:

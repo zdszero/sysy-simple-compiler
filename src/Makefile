@@ -8,9 +8,9 @@ main.o: globals.h parse.h util.h
 analyze.o: globals.h parse.h symtab.h analyze.h
 scan.o: scan.c
 parse.o: parse.c
-symtab.o: globals.h parse.h symtab.h
+symtab.o: globals.h parse.h symtab.h util.h
 util.o: globals.h parse.h symtab.h util.h
-codegen.o: globals.h parse.h symtab.h codegen.h
+codegen.o: globals.h parse.h symtab.h codegen.h util.h
 scan.c: scan.l globals.h parse.h scan.h util.h
 	flex -o scan.c scan.l
 parse.c: parse.y globals.h parse.h scan.h symtab.h util.h analyze.h

@@ -1,4 +1,5 @@
 #include "symtab.h"
+#include "util.h"
 #include <string.h>
 #include <stdlib.h>
 
@@ -80,6 +81,7 @@ int newIdent(char *s, int kind, int type, int scope) {
   SymTab[idx].kind = kind;
   SymTab[idx].type = type;
   SymTab[idx].arr = NULL;
+  SymTab[idx].scope = scope;
   return idx;
 }
 
@@ -89,6 +91,10 @@ void setIdentType(int id, int type) {
 
 void setIdentKind(int id, int kind) {
   SymTab[id].kind = kind;
+}
+
+void setIdentOffset(int id, int offset) {
+  SymTab[id].offset = offset;
 }
 
 /* find identifier in symbol table and return its index */
@@ -113,6 +119,14 @@ int getIdentType(int id) {
 
 int getIdentKind(int id) {
   return SymTab[id].kind;
+}
+
+int getIdentOffset(int id) {
+  return SymTab[id].offset;
+}
+
+int getIdentScope(int id) {
+  return SymTab[id].scope;
 }
 
 int getArrayDimension(int id, int d) {

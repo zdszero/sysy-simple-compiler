@@ -11,6 +11,7 @@
   int yylex();
   void yyerror(const char *);
   TreeNode *syntaxTree;
+  static int localOffset;
 %}
 
 %define api.value.type { TreeNode * }
@@ -200,6 +201,16 @@ func_declaration : type_specifier var LP RP compound_statement
                      typeCheck_HasReturn($1, $5, $2->attr.id);
                      free($1);
                      scopeAttr = Scope_Glob;
+                     /* resolve offset for each symbol */
+                     for (TreeNode *t = $5; t; t = t->sibling) {
+                       if (t->tok == DECL) {
+                         int type = t->children[0]->type;
+                         int size = getTypeSize(type);
+                         localOffset -= size;
+                         setIdentOffset(t->children[0]->attr.id, localOffset);
+                       }
+                     }
+                     setIdentOffset($2->attr.id, localOffset);
                    }
                  ;
 

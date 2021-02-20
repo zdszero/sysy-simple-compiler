@@ -7,9 +7,9 @@
 
 extern void printSymTab();
 int traceScan = 0;
-int traceParse = 1;
-int traceSymbols = 1;
-int generateCode = 0;
+int traceParse = 0;
+int traceSymbols = 0;
+int generateCode = 1;
 
 FILE *Infile, *Outfile;
 
