@@ -56,8 +56,7 @@ int cg_call(int r, int id);
 static int cg_loadnum(long value);
 static int cg_loadvar(TreeNode *t);
 static void cg_type(int type, int val);
-static void cg_var(int id);
-static void cg_array(TreeNode *root);
+static void cg_declaration(TreeNode *t);
 static void cg_assign(TreeNode *t, int r);
 static int cg_add(int r1, int r2);
 static int cg_sub(int r1, int r2);
@@ -170,46 +169,10 @@ static int cg_loadnum(long value) {
 static int cg_loadvar(TreeNode *t) {
   int id = t->attr.id;
   int r = allocate_reg();
-  int size = getTypeSize(getIdentType(id));
-  char *name = getIdentName(id);
-  int scope = getIdentScope(id);
-  /* ARRAY */
-  if (t->children[0]) {
-    cg_comment("load array element");
-    // r1: &a[0]   r2: index
-    int r1 = getArrayBase(t);
-    int r2 = getArrayIndex(t);
-    if (size == 1) {
-      fprintf(Outfile, "\tmovb\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, breglist[r]);
-    } else if (size == 4) {
-      fprintf(Outfile, "\tmovl\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, lreglist[r]);
-    } else if (size == 8) {
-      fprintf(Outfile, "\tmovq\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, reglist[r]);
-    }
-    free_reg(r1);
-    free_reg(r2);
-  /* VARIABLE */
-  } else {
-    cg_comment("load variable");
-    if (scope == Scope_Glob) {
-      if (size == 1) {
-        fprintf(Outfile, "\tmovb\t%s(%%rip), %s\n", name, breglist[r]);
-      } else if (size == 4) {
-        fprintf(Outfile, "\tmovl\t%s(%%rip), %s\n", name, lreglist[r]);
-      } else if (size == 8) {
-        fprintf(Outfile, "\tmovq\t%s(%%rip), %s\n", name, reglist[r]);
-      }
-    } else if (scope == Scope_Local) {
-      int offset = getIdentOffset(id);
-      if (size == 1) {
-        fprintf(Outfile, "\tmovb\t%d(%%rbp), %s\n", offset, breglist[r]);
-      } else if (size == 4) {
-        fprintf(Outfile, "\tmovl\t%d(%%rbp), %s\n", offset, lreglist[r]);
-      } else if (size == 8) {
-        fprintf(Outfile, "\tmovq\t%d(%%rbp), %s\n", offset, reglist[r]);
-      }
-    }
-  }
+  int size = getIdentSize(id);
+  int tmpr = cg_address(t);
+  fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[tmpr], getSizeReg(size, r));
+  free_reg(tmpr);
   return r;
 }
 
@@ -282,32 +245,33 @@ static int array_local_dfs(TreeNode *t, int idx, int type, int id, int level) {
   return idx - 1;
 }
 
-static void cg_var(int id) {
-  int type = getIdentType(id);
+static void cg_declaration(TreeNode *t) {
+  int id = t->attr.id;
+  int type = t->type;
   int scope = getIdentScope(id);
-  if (scope == Scope_Glob) {
-    char *name = getIdentName(id);
-    fprintf(Outfile, "\t.globl\t%s\n", name);
-    fprintf(Outfile, "%s:", name);
-    cg_type(type, 0);
-  }
-}
-
-static void cg_array(TreeNode *root) {
-  int id = root->attr.id;
-  int type = root->type;
-  int scope = getIdentScope(id);
-  int total = getArrayTotal(id, 1);
-  if (scope == Scope_Glob) {
-    char *name = getIdentName(id);
-    fprintf(Outfile, "%s:", name);
-    int count = array_glob_dfs(root->children[0], type, id, 0);
-    while (count < total) {
-      cg_type(type, 0);
-      count++;
+  int kind = getIdentKind(id);
+  if (kind == Sym_Array) {
+    int total = getArrayTotal(id, 0);
+    if (scope == Scope_Glob) {
+      char *name = getIdentName(id);
+      fprintf(Outfile, "%s:", name);
+      int count = array_glob_dfs(t->children[0], type, id, 0);
+      while (count < total) {
+        cg_type(type, 0);
+        count++;
+      }
+    } else {
+      array_local_dfs(t->children[0], 0, type, id, 0);
     }
-  } else {
-    array_local_dfs(root->children[0], 0, type, id, 0);
+  } else if (kind == Sym_Var) {
+    if (scope == Scope_Glob) {
+      char *name = getIdentName(id);
+      fprintf(Outfile, "\t.globl\t%s\n", name);
+      fprintf(Outfile, "%s:", name);
+      cg_type(type, 0);
+    }
+    if (t->children[0])
+      cg_assign(t, cg_eval(t->children[0]));
   }
 }
 
@@ -552,16 +516,7 @@ static void genAST(TreeNode *root) {
       break;
     case DECL:
       for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
-        int kind = getIdentKind(t->attr.id);
-        if (kind == Sym_Var) {
-          cg_var(t->attr.id);
-          if (t->children[0])
-            cg_assign(t, cg_eval(t->children[0]));
-        } else if (kind == Sym_Array) {
-          cg_array(t);
-        } else {
-          fprintf(stderr, "Internal Error: wrong kind after decl codgen\n");
-        }
+        cg_declaration(t);
       }
       break;
     case ASSIGN:

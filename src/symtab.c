@@ -9,7 +9,7 @@ static int Symbols = 0;
 static int Locals = NSYMBOLS - 1;
 static int isFirstTime = 1;
 static char *builtinFn[] = {
-  "putint", "putchar", "putlong", "putarray"
+  "putch", "putint", "putlong", "putarray"
 };
 
 int pointerTo(int type) {
