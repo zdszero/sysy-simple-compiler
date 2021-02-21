@@ -17,7 +17,7 @@
 %}
 
 quote      \'
-number     "-"?("0"[Xx][0-9a-fA-F]+|[0-9]+)
+number     ("0"[Xx][0-9a-fA-F]+|[0-9]+)
 identifier [a-zA-Z_][a-zA-Z0-9_]*
 space      [ \t]+
 

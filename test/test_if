@@ -1,9 +1,10 @@
-void main() {
-  int i; int j;
-  i=6; j=12;
-  if (i < j) {
-    putint(i);
+int main() {
+  int a[3] = {3, 5, 7};
+  int b[3] = {6, 5, 4};
+  if (a[0] > b[0]) {
+    putint(0);
   } else {
-    putint(j);
+    putint(1);
   }
+  return 0;
 }

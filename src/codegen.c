@@ -18,7 +18,8 @@ static char *breglist[REGCOUNT] = {"%al", "%bl", "%cl", "%dl", "%sil", "%dil", "
 static char *setlist[REGCOUNT] = {"sete", "setne", "setle", "setl", "setge", "setg"};
 // static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
 enum {RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11};
-static int labId = 1;
+// the next available label
+static int curLab = 1;
 static int isAssign = 1;
 static int comment = 1;
 static int curSec = -1;
@@ -53,9 +54,8 @@ static void cg_comment(char *msg) {
   }
 }
 
-static void cg_label() {
-  fprintf(Outfile, "L%d:\n", labId);
-  labId++;
+static void cg_label(int lab) {
+  fprintf(Outfile, "L%d:\n", lab);
 }
 
 static void freeall_regs() {
@@ -287,7 +287,8 @@ static void cg_array(TreeNode *root) {
   }
 }
 
-static void cg_assign(int id, int r) {
+static void cg_assign(TreeNode *t, int r) {
+  int id = t->attr.id;
   int type = getIdentType(id);
   int scope = getIdentScope(id);
   if (scope == Scope_Glob) {
@@ -374,12 +375,12 @@ static int cg_compare(int r1, int r2, int idx) {
   return r1;
 }
 
-/* jump to labId if test failed */
-static void cg_jump(char *how, int labId) {
+/* jump to curLab if test failed */
+static void cg_jump(char *how, int curLab) {
   if (how)
-    fprintf(Outfile, "\tje\tL%d\n", labId);
+    fprintf(Outfile, "\t%s\tL%d\n", how, curLab);
   else
-    fprintf(Outfile, "\tjmp\tL%d\n", labId);
+    fprintf(Outfile, "\tjmp\tL%d\n", curLab);
 }
 
 static int cg_logic_and(int r1, int r2) {
@@ -476,6 +477,7 @@ static void genAST(TreeNode *root) {
   else
     cg_section_text();
   int r;
+  int tmplab, tmplab2;
   switch (root->tok) {
     case FUNC:
       cg_comment("function preamble");
@@ -490,7 +492,7 @@ static void genAST(TreeNode *root) {
         if (kind == Sym_Var) {
           cg_var(t->attr.id);
           if (t->children[0])
-            cg_assign(t->attr.id, cg_eval(t->children[0]));
+            cg_assign(t, cg_eval(t->children[0]));
         } else if (kind == Sym_Array) {
           cg_array(t);
         } else {
@@ -502,39 +504,41 @@ static void genAST(TreeNode *root) {
       cg_comment("assign");
       isAssign = 1;
       r = cg_eval(root->children[1]);
-      cg_assign(root->children[0]->attr.id, r);
+      cg_assign(root->children[0], r);
       break;
     case IF:
       cg_comment("if statement");
+      tmplab = curLab++;
+      tmplab2 = curLab++;
       r = cg_eval(root->children[0]);
-      cg_comment("fail jump");
-      fprintf(Outfile, "\tcmpq\t$0, %s\n", reglist[r]);
-      cg_jump("je", labId);
+      fprintf(Outfile, "\tcmpq\t$1, %s\n", reglist[r]);
+      cg_jump("je", tmplab);
       free_reg(r);
-      cg_comment("if branch");
-      genAST(root->children[1]);
-      if (root->children[2]) {
-        cg_jump(NULL, labId+1);
-      }
       cg_comment("else branch");
-      cg_label();
       if (root->children[2]) {
         genAST(root->children[2]);
-        cg_label();
       }
+      cg_jump(NULL, tmplab2);
+      cg_label(tmplab);
+      cg_comment("if branch");
+      tmplab = curLab++;
+      genAST(root->children[1]);
+      cg_label(tmplab2);
       break;
     case WHILE:
       cg_comment("while");
-      cg_label();
+      tmplab = curLab++;
+      tmplab2 = curLab++;
+      cg_label(tmplab);
       r = cg_eval(root->children[0]);
-      fprintf(Outfile, "\tcmpq\t$0, %s\n", reglist[r]);
-      cg_comment("jump out of while");
-      cg_jump("je", labId);
+      fprintf(Outfile, "\tcmpq\t$1, %s\n", reglist[r]);
+      cg_jump("jne", tmplab2);
       free_reg(r);
+      cg_comment("loop body");
       genAST(root->children[1]);
-      cg_comment("loop jump");
-      cg_jump(NULL, labId-1);
-      cg_label();
+      cg_jump(NULL, tmplab);
+      cg_comment("end of while");
+      cg_label(tmplab2);
       break;
     case GLUE:
       genAST(root->children[0]);
