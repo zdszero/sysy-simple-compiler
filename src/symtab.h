@@ -32,6 +32,7 @@ int getIdentType(int id);
 int getIdentKind(int id);
 int getIdentOffset(int id);
 int getIdentScope(int id);
+int getIdentSize(int id);
 int getArrayTotal(int id, int level);
 int getArrayDimension(int id, int d);
 int getArrayDims(int id);

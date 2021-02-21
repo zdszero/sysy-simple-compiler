@@ -129,6 +129,11 @@ int getIdentScope(int id) {
   return SymTab[id].scope;
 }
 
+int getIdentSize(int id) {
+  int type = SymTab[id].type;
+  return getTypeSize(type);
+}
+
 int getArrayDimension(int id, int d) {
   DimRec *tmp = SymTab[id].arr->first;
   for (int i = 1; i < d; i++)

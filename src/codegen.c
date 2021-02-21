@@ -16,6 +16,7 @@ static char *reglist[REGCOUNT] = {"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi"
 static char *lreglist[REGCOUNT] = {"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "%r8d", "%r9d", "%r10d", "%r11d"};
 static char *breglist[REGCOUNT] = {"%al", "%bl", "%cl", "%dl", "%sil", "%dil", "%r8b", "%r9b", "%r10b", "%r11b"};
 static char *setlist[REGCOUNT] = {"sete", "setne", "setle", "setl", "setge", "setg"};
+static char *movcmd[3] = {"movb", "movl", "movq"};
 // static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
 enum {RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11};
 // the next available label
@@ -28,7 +29,48 @@ static int curSec = -1;
  *  function declaration        *
  ********************************/
 
+/* register management */
+static int allocate_reg();
+static void freeall_regs();
+static void free_reg(int i);
+/* section management */
+static void cg_section_text();
+static void cg_section_data();
+/* some help functions */
+static void cg_comment(char *msg);
+static int getArrayIndex(TreeNode *t);
+static int getArrayBase(TreeNode *t);
+static int array_glob_dfs(TreeNode *t, int type, int id, int level);
+static int array_local_dfs(TreeNode *t, int idx, int type, int id, int level);
+static char *getSizeReg(int size, int idx);
+static char *getSizeMov(int size);
+/* jump */
+static void cg_label(int lab);
+static int cg_address(TreeNode *t);
+/* function */
+static void cg_preamble();
+void cg_func_preamble(TreeNode *t);
+static void cg_func_postamble(TreeNode *t);
+/* general statments */
+int cg_call(int r, int id);
+static int cg_loadnum(long value);
+static int cg_loadvar(TreeNode *t);
+static void cg_type(int type, int val);
+static void cg_var(int id);
+static void cg_array(TreeNode *root);
+static void cg_assign(TreeNode *t, int r);
+static int cg_add(int r1, int r2);
+static int cg_sub(int r1, int r2);
+static int cg_mul(int r1, int r2);
+static int cg_div(int r1, int r2);
+static int cg_compare(int r1, int r2, int idx);
+static void cg_jump(char *how, int curLab);
+static int cg_logic_and(int r1, int r2);
+static int cg_logic_or(int r1, int r2);
+static void cg_return(int r, int type);
 static int cg_eval(TreeNode *root);
+static void genAST(TreeNode *root);
+void genCode(TreeNode *root);
 
 /********************************
  *  function implementation     *
@@ -134,27 +176,9 @@ static int cg_loadvar(TreeNode *t) {
   /* ARRAY */
   if (t->children[0]) {
     cg_comment("load array element");
-    /* get the index */
-    int depth = 1;
-    int r2 = allocate_reg(); // index reg
-    fprintf(Outfile, "\tmovq\t$0, %s\n", reglist[r2]);
-    for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
-      int dim = getArrayTotal(id, depth+1);
-      int tmpr = cg_eval(tmp);
-      if (dim > 1)
-        fprintf(Outfile, "\timulq\t$%d, %s\n", dim, reglist[tmpr]);
-      fprintf(Outfile, "\taddq\t%s, %s\n", reglist[tmpr], reglist[r2]);
-      free_reg(tmpr);
-      depth++;
-    }
-    int r1 = allocate_reg();
     // r1: &a[0]   r2: index
-    if (scope == Scope_Glob) {
-      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r1]);
-    } else {
-      int startOffset = getIdentOffset(id);
-      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", startOffset, reglist[r1]);
-    }
+    int r1 = getArrayBase(t);
+    int r2 = getArrayIndex(t);
     if (size == 1) {
       fprintf(Outfile, "\tmovb\t(%s,%s,%d), %s\n", reglist[r1], reglist[r2], size, breglist[r]);
     } else if (size == 4) {
@@ -289,39 +313,11 @@ static void cg_array(TreeNode *root) {
 
 static void cg_assign(TreeNode *t, int r) {
   int id = t->attr.id;
-  int type = getIdentType(id);
-  int scope = getIdentScope(id);
-  if (scope == Scope_Glob) {
-    char *name = getIdentName(id);
-    switch (type) {
-      case T_Char:
-        fprintf(Outfile, "\tmovb\t%s, %s(%%rip)\n", breglist[r], name);
-        break;
-      case T_Int:
-        fprintf(Outfile, "\tmovl\t%s, %s(%%rip)\n", lreglist[r], name);
-        break;
-      case T_Long:
-      case T_Charptr:
-      case T_Intptr:
-      case T_Longptr:
-        fprintf(Outfile, "\tmovq\t%s, %s(%%rip)\n", reglist[r], name);
-        break;
-      default:
-        fprintf(stderr, "Internal Error: variable %s is not given a type when declaring\n", getIdentName(id));
-        exit(1);
-    }
-  } else {
-    int offset = getIdentOffset(id);
-    int size = getTypeSize(type);
-    if (size == 1) {
-      fprintf(Outfile, "\tmovb\t%s, %d(%%rbp)\n", breglist[r], offset);
-    } else if (size == 4) {
-      fprintf(Outfile, "\tmovl\t%s, %d(%%rbp)\n", lreglist[r], offset);
-    } else if (size == 8) {
-      fprintf(Outfile, "\tmovq\t%s, %d(%%rbp)\n", reglist[r], offset);
-    }
-  }
+  int size = getIdentSize(id);
+  int tmpr = cg_address(t);
+  fprintf(Outfile, "\t%s\t%s, (%s)\n", getSizeMov(size), getSizeReg(size, r), reglist[tmpr]);
   free_reg(r);
+  free_reg(tmpr);
 }
 
 /*
@@ -415,6 +411,76 @@ static void cg_return(int r, int type) {
   }
 }
 
+static int getArrayBase(TreeNode *t) {
+  int r = allocate_reg();
+  int id = t->attr.id;
+  int scope = getIdentScope(id);
+  if (scope == Scope_Glob) {
+    char *name = getIdentName(id);
+    fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
+  } else {
+    int startOffset = getIdentOffset(id);
+    fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", startOffset, reglist[r]);
+  }
+  return r;
+}
+
+/* return the register that holds the idx of current array treenode */
+static int getArrayIndex(TreeNode *t) {
+    int r = allocate_reg(); // index reg
+    int id = t->attr.id;
+    int depth = 1;
+    fprintf(Outfile, "\tmovq\t$0, %s\n", reglist[r]);
+    for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
+      int dim = getArrayTotal(id, depth+1);
+      int tmpr = cg_eval(tmp);
+      if (dim > 1)
+        fprintf(Outfile, "\timulq\t$%d, %s\n", dim, reglist[tmpr]);
+      fprintf(Outfile, "\taddq\t%s, %s\n", reglist[tmpr], reglist[r]);
+      free_reg(tmpr);
+      depth++;
+    }
+    return r;
+}
+
+static char *getSizeReg(int size, int idx) {
+  if (size == 1)
+    return breglist[idx];
+  else if (size == 4)
+    return lreglist[idx];
+  else
+    return reglist[idx];
+}
+
+static char *getSizeMov(int size) {
+  return movcmd[size / 4];
+}
+
+static int cg_address(TreeNode *t) {
+  int id = t->attr.id;
+  int scope = getIdentScope(id);
+  int kind = getIdentKind(id);
+  int type = getIdentType(id);
+  int size = getTypeSize(type);
+  int r = allocate_reg();
+  if (kind == Sym_Array) {
+    int br = getArrayBase(t);
+    int ir = getArrayIndex(t);
+    fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", reglist[br], reglist[ir], size, reglist[r]);
+    free_reg(br);
+    free_reg(ir);
+  } else if (kind == Sym_Var) {
+    if (scope == Scope_Glob) {
+      char *name = getIdentName(id);
+      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
+    } else if (scope == Scope_Local) {
+      int offset = getIdentOffset(id);
+      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, reglist[r]);
+    }
+  }
+  return r;
+}
+
 static int cg_eval(TreeNode *root) {
   if (root->tok == CALL) {
     int r = cg_eval(root->children[1]);
@@ -426,9 +492,7 @@ static int cg_eval(TreeNode *root) {
     return r;
   } else if (root->tok == AMPERSAND) {
     cg_comment("get address");
-    int r = allocate_reg();
-    fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", getIdentName(root->children[0]->attr.id), reglist[r]);
-    return r;
+    return cg_address(root->children[0]);
   } else if (root->tok == IDENT) {
       return cg_loadvar(root);
   }

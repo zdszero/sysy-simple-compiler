@@ -5,6 +5,6 @@ out
 parse.c
 parse.h
 scan.c
-todo.md
 ref/**
 report/**
+test/**
