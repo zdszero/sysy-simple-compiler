@@ -52,10 +52,14 @@ space      [ \t]+
 "*"           { return TIMES;     }
 "/"           { return OVER;      }
 ";"           { return SEMI;      }
-"("           { return LP;        }
-")"           { return RP;        }
-"{"           { return LC;        }
-"}"           { return RC;        }
+"("           { scopeAttr = Scope_Para;
+                return LP;        }
+")"           { scopeAttr = Scope_Glob;
+                return RP;        }
+"{"           { scopeAttr = Scope_Local;
+                return LC;        }
+"}"           { scopeAttr = Scope_Glob;
+                return RC;        }
 "["           { return LS;        }
 "]"           { return RS;        }
 \n            { lineno++;         }
@@ -69,11 +73,6 @@ space      [ \t]+
                 }
                 return NUM;       }
 {identifier}  { strcpy(Tok.text, yytext);
-                char c;
-                while (isspace(c = input()));
-                if (c == '(')
-                  scopeAttr = Scope_Local;
-                unput(c);
                 return IDENT;     }
 {quote}       { char c;
                 if (!isascii(c = input()))

@@ -13,7 +13,7 @@ enum {
 };
 
 enum {
-  Scope_Glob, Scope_Local
+  Scope_Glob, Scope_Local, Scope_Para
 };
 
 typedef struct treeNode {
