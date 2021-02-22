@@ -27,12 +27,12 @@ int main(int argc, char *argv[])
   Outfile = stdout;
   Tok.token = -1;
   yyparse();
-  if (traceParse) {
+  if (hasError)
+    exit(1);
+  if (traceParse)
     printTree(syntaxTree, 0);
-  }
-  if (traceSymbols) {
+  if (traceSymbols)
     printSymTab();
-  }
   if (generateCode)
     genCode(syntaxTree);
   return 0;

@@ -3,10 +3,11 @@
 
 #include "globals.h"
 
-void typeCheck_Assign(TreeNode *, TreeNode *);
-void typeCheck_Compare(TreeNode *, TreeNode *);
-void typeCheck_Calc(TreeNode *, TreeNode *);
-void typeCheck_HasReturn(TreeNode *, TreeNode *, int);
-void checkArray(TreeNode *);
+void checkAssign(TreeNode *t1, TreeNode *t2);
+void checkCompare(TreeNode *t1, TreeNode *t2);
+void checkCalc(TreeNode *t1, TreeNode *t2);
+void checkHasReturn(TreeNode *t1, TreeNode *t2, int id);
+void checkArray(TreeNode *t);
+void checkCall(TreeNode *t);
 
 #endif

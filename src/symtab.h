@@ -3,6 +3,8 @@
 
 #include "globals.h"
 
+#define BuildinFunc 4
+
 enum symbolKind {
   Sym_Unknown, Sym_Func, Sym_Var, Sym_Array
 };
@@ -36,6 +38,8 @@ int getIdentSize(int id);
 int getArrayTotal(int id, int level);
 int getArrayDimension(int id, int d);
 int getArrayDims(int id);
+int getFuncArgs(int id);
+int getFuncParaType(int id, int idx);
 char *getIdentName(int id);
 void setArrayDimension(int id, int d, int val);
 void setIdentType(int id, int type);

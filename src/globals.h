@@ -44,5 +44,6 @@ extern int lineno;
 extern Token Tok;
 extern TreeNode *syntaxTree;
 extern int scopeAttr;
+extern int hasError;
 
 #endif

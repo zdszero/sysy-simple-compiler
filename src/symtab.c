@@ -15,12 +15,22 @@ SymRec SymTab[NSYMBOLS];
 static int Symbols = 0;
 static int lastLocal = NSYMBOLS - 1;
 static int Locals = NSYMBOLS - 1;
-static int isFirstTime = 1;
 static char *builtinFn[] = {
   "putch", "putint", "putlong", "putarray"
 };
 
 FuncRange ranges[FNCOUNT];
+
+__attribute__((constructor)) static void initSymtab() {
+  int size = sizeof(builtinFn) / sizeof(char *);
+  for (int i = 0; i < size; i++) {
+    SymTab[i].name = builtinFn[i];
+    SymTab[i].kind = Sym_Func;
+    SymTab[i].type = T_Void;
+    SymTab[i].scope = Scope_Glob;
+  }
+  Symbols = size;
+}
 
 /* range: (Locals, lastLocal] */
 void setFunctionRange(int id) {
@@ -75,17 +85,6 @@ int valueAt(int type) {
 }
 
 int newIdent(char *s, int kind, int type, int scope) {
-  if (isFirstTime) {
-    int size = sizeof(builtinFn) / sizeof(char *);
-    for (int i = 0; i < size; i++) {
-      SymTab[i].name = builtinFn[i];
-      SymTab[i].kind = Sym_Func;
-      SymTab[i].type = T_Void;
-      SymTab[i].scope = Scope_Glob;
-    }
-    isFirstTime = 0;
-    Symbols = size;
-  }
   int idx;
   if (scope == Scope_Glob)
     idx = Symbols++;
@@ -188,6 +187,21 @@ void setArrayDimension(int id, int d, int val) {
   tmp->dim = val;
 }
 
+int getFuncArgs(int id) {
+  int ans = 0;
+  for (int i = ranges[id].start; i > ranges[id].end; i--) {
+    if (SymTab[i].scope == Scope_Para)
+      ans++;
+    else
+      break;
+  }
+  return ans;
+}
+
+int getFuncParaType(int id, int idx) {
+  return SymTab[ranges[id].start-idx].type;
+}
+
 void printDimension(int id) {
   DimRec *tmp = SymTab[id].arr->first;
   fprintf(Outfile, "(");
@@ -224,16 +238,29 @@ void addDimension(int id, int d) {
   }
 }
 
+static void printSymbol(int i) {
+  printf("%s", SymTab[i].name);
+  int scope = SymTab[i].scope;
+  if (scope == Scope_Glob) {
+    printf("(glob)");
+  } else if (scope == Scope_Local) {
+    printf("(local)");
+  } else if (scope == Scope_Para) {
+    printf("(para)");
+  }
+  printf(" -> ");
+}
+
 void printSymTab() {
   printf("Globals:\n");
   for (int i = 0; i < Symbols; i++)
-    printf("%s -> ", SymTab[i].name);
+    printSymbol(i);
   printf("\nLocals\n");
   for (int i = 0; i < FNCOUNT; i++) {
     if (ranges[i].flag == 1) {
       printf("%s : ", SymTab[i].name);
       for (int j = ranges[i].start; j > ranges[i].end; j--) {
-        printf("%s -> ", SymTab[j].name);
+        printSymbol(j);
       }
       putchar('\n');
     }

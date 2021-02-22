@@ -59,7 +59,7 @@ var_declaraton : type_specifier var_list SEMI
                      setIdentType(t->attr.id, $1->type);
                      t->type = $1->type;
                      if (t->children[0])
-                       typeCheck_Assign(t, t->children[0]);
+                       checkAssign(t, t->children[0]);
                    }
                    $$->children[0] = $2;
                    free($1);
@@ -105,7 +105,7 @@ array : array LS expression RS
         { $$ = $1;
           if (Tok.numval <= 0) {
             fprintf(stderr, "Error: array cannot be declared with a negative size in line %d\n", lineno);
-            exit(1);
+            hasError = 1;
           }
           addDimension($$->attr.id, Tok.numval);
         }
@@ -123,7 +123,7 @@ var : IDENT
         }
         else {
           fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
-          exit(1);
+          hasError = 1;
         }
       }
     ;
@@ -164,6 +164,7 @@ var_ref : TIMES var_ref
           { $$ = mkTreeNode(CALL);
             $$->children[0] = $1;
             $$->children[1] = $3;
+            checkCall($$);
           }
         | var_ref LS expression RS
           { $$ = $1;
@@ -182,7 +183,7 @@ var_ref : TIMES var_ref
             int id = getIdentId(Tok.text);
             if (id == -1) {
               fprintf(Outfile, "Error: variable %s is referred before defination at line %d\n", Tok.text, lineno);
-              exit(1);
+              hasError = 1;
             } else {
               $$->attr.id = id;
               $$->type = getIdentType(id);
@@ -211,7 +212,7 @@ func_declaration : type_specifier var LP parameter_list RP compound_statement
                      $$->children[0] = $2;
                      $$->children[1] = $6;
                      $$->children[2] = $4;
-                     typeCheck_HasReturn($1, $6, $2->attr.id);
+                     checkHasReturn($1, $6, $2->attr.id);
                      free($1);
                      scopeAttr = Scope_Glob;
                      /* resolve offset for each symbol */
@@ -299,7 +300,7 @@ statement : var_declaraton       { $$ = $1; }
           ;
 
 assign_statement : var_ref ASSIGN expression SEMI
-                   { typeCheck_Assign($1, $3);
+                   { checkAssign($1, $3);
                      $$ = mkTreeNode(ASSIGN);
                      $$->children[0] = $1;
                      $$->children[1] = $3;
@@ -360,82 +361,82 @@ return_statement : RETURN expression SEMI
                  ;
 
 expression : expression AND expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(AND);
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression OR expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(OR);
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression EQ expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(EQ);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression NE expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(NE);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression GT expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(GT);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression GE expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(GE);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression LT expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(LT);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression LE expression
-             { typeCheck_Compare($1, $3);
+             { checkCompare($1, $3);
                $$ = mkTreeNode(LE);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression PLUS expression
-             { typeCheck_Calc($1, $3);
+             { checkCalc($1, $3);
                $$ = mkTreeNode(PLUS);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression MINUS expression
-             { typeCheck_Calc($1, $3);
+             { checkCalc($1, $3);
                $$ = mkTreeNode(MINUS);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression TIMES expression
-             { typeCheck_Calc($1, $3);
+             { checkCalc($1, $3);
                $$ = mkTreeNode(TIMES);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
              }
            | expression OVER expression
-             { typeCheck_Calc($1, $3);
+             { checkCalc($1, $3);
                $$ = mkTreeNode(OVER);
                $$->type = T_Long;
                $$->children[0] = $1;
@@ -465,5 +466,5 @@ int yylex() {
 
 void yyerror(const char *msg) {
   fprintf(stderr, "%s in line %d\n", msg, lineno);
-  exit(1);
+  hasError = 1;
 }
