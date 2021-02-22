@@ -160,7 +160,7 @@ var_ref : TIMES var_ref
             $$->type = pointerTo($2->type);
             $$->children[0] = $2;
           }
-        | var_ref LP expression RP
+        | var_ref LP expression_list RP
           { $$ = mkTreeNode(CALL);
             $$->children[0] = $1;
             $$->children[1] = $3;
@@ -190,18 +190,32 @@ var_ref : TIMES var_ref
           }
         ;
 
+expression_list : expressions { $$ = $1; }
+                | %empty { $$ = NULL; }
+                ;
 
-func_declaration : type_specifier var LP RP compound_statement
+expressions : expressions COMMA expression
+              { YYSTYPE t = $1;
+                while (t->sibling)
+                  t = t->sibling;
+                t->sibling = $3;
+              }
+            | expression { $$ = $1; }
+            ;
+
+func_declaration : type_specifier var LP parameter_list RP compound_statement
                    { $$ = mkTreeNode(FUNC);
                      setIdentType($2->attr.id, $1->type);
                      $2->type = $1->type;
                      setIdentKind($2->attr.id, Sym_Func);
-                     $$->children[0] = $2; $$->children[1] = $5;
-                     typeCheck_HasReturn($1, $5, $2->attr.id);
+                     $$->children[0] = $2;
+                     $$->children[1] = $6;
+                     $$->children[2] = $4;
+                     typeCheck_HasReturn($1, $6, $2->attr.id);
                      free($1);
                      scopeAttr = Scope_Glob;
                      /* resolve offset for each symbol */
-                     for (TreeNode *t = $5; t; t = t->sibling) {
+                     for (TreeNode *t = $6; t; t = t->sibling) {
                        if (t->tok == DECL) {
                          for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
                            int type = tmp->type;
@@ -218,6 +232,39 @@ func_declaration : type_specifier var LP RP compound_statement
                      setIdentOffset($2->attr.id, localOffset);
                    }
                  ;
+
+parameter_list : parameters
+                 { $$ = $1; }
+               | %empty
+                 { $$ = NULL; }
+               ;
+
+parameters : parameters COMMA parameter
+             { YYSTYPE t = $1;
+               while (t->sibling)
+                 t = t->sibling;
+               t->sibling = $3;
+               $$ = $1;
+             }
+           | parameter
+             { $$ = $1; }
+           ;
+
+parameter : type_specifier var
+            { $$ = $2;
+              $$->type = $1->type;
+              setIdentType($$->attr.id, $$->type);
+              setIdentKind($$->attr.id, Sym_Var);
+              free($1);
+            }
+          | type_specifier var LS RS
+            { $$ = $2;
+              $$->type = pointerTo($1->type);
+              setIdentType($$->attr.id, $$->type);
+              setIdentKind($$->attr.id, Sym_Array);
+              free($1);
+            }
+          ;
 
 type_specifier : type_specifier TIMES
                  { $$ = $1;

@@ -105,6 +105,8 @@ void scan() {
     yyout = Outfile;
   }
   Tok.token = scan_yylex();
-  if (traceScan)
+  if (traceScan) {
+    printf("line %d: ", lineno);
     printToken(Tok.token);
+  }
 }
