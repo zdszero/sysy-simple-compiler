@@ -42,6 +42,7 @@ void setIdentType(int id, int type);
 void setIdentKind(int id, int kind);
 void setDimension(int id, int lev, int val);
 void setIdentOffset(int id, int offset);
+void setFunctionRange(int id);
 void addDimension(int id, int d);
 int pointerTo(int type);
 int valueAt(int type);

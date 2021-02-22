@@ -58,8 +58,7 @@ space      [ \t]+
                 return RP;        }
 "{"           { scopeAttr = Scope_Local;
                 return LC;        }
-"}"           { scopeAttr = Scope_Glob;
-                return RC;        }
+"}"           { return RC;        }
 "["           { return LS;        }
 "]"           { return RS;        }
 \n            { lineno++;         }

@@ -3,14 +3,32 @@
 #include <string.h>
 #include <stdlib.h>
 
-SymRec SymTab[NSYMBOLS];
+#define FNCOUNT 128
 
+typedef struct funcRange {
+  int flag;
+  int start;
+  int end;
+} FuncRange;
+
+SymRec SymTab[NSYMBOLS];
 static int Symbols = 0;
+static int lastLocal = NSYMBOLS - 1;
 static int Locals = NSYMBOLS - 1;
 static int isFirstTime = 1;
 static char *builtinFn[] = {
   "putch", "putint", "putlong", "putarray"
 };
+
+FuncRange ranges[FNCOUNT];
+
+/* range: (Locals, lastLocal] */
+void setFunctionRange(int id) {
+  ranges[id].start = lastLocal;
+  ranges[id].end = Locals;
+  ranges[id].flag = 1;
+  lastLocal = Locals;
+}
 
 int pointerTo(int type) {
   int newtype;
@@ -100,12 +118,18 @@ void setIdentOffset(int id, int offset) {
 /* find identifier in symbol table and return its index */
 int getIdentId(char *s) {
   int i;
-  for (i = NSYMBOLS-1; i > Locals && SymTab[i].name != NULL; i--)
-    if (strcmp(s, SymTab[i].name) == 0)
-      return i;
-  for (i = 0; i < Symbols && SymTab[i].name != NULL; i++)
-    if (strcmp(s, SymTab[i].name) == 0)
-      return i;
+  if (scopeAttr == Scope_Glob) {
+    for (i = 0; i < Symbols && SymTab[i].name != NULL; i++)
+      if (strcmp(s, SymTab[i].name) == 0)
+        return i;
+  } else {
+    for (i = lastLocal; i > Locals && SymTab[i].name != NULL; i--)
+      if (strcmp(s, SymTab[i].name) == 0)
+        return i;
+    for (i = 0; i < Symbols && SymTab[i].name != NULL; i++)
+      if (strcmp(s, SymTab[i].name) == 0)
+        return i;
+  }
   return -1;
 }
 
@@ -205,7 +229,14 @@ void printSymTab() {
   for (int i = 0; i < Symbols; i++)
     printf("%s -> ", SymTab[i].name);
   printf("\nLocals\n");
-  for (int i = NSYMBOLS-1; i > Locals; i--)
-    printf("%s -> ", SymTab[i].name);
+  for (int i = 0; i < FNCOUNT; i++) {
+    if (ranges[i].flag == 1) {
+      printf("%s : ", SymTab[i].name);
+      for (int j = ranges[i].start; j > ranges[i].end; j--) {
+        printf("%s -> ", SymTab[j].name);
+      }
+      putchar('\n');
+    }
+  }
   putchar('\n');
 }
