@@ -361,86 +361,77 @@ return_statement : RETURN expression SEMI
                  ;
 
 expression : expression AND expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(AND);
+             { $$ = mkTreeNode(AND);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression OR expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(OR);
+             { $$ = mkTreeNode(OR);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression EQ expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(EQ);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(EQ);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression NE expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(NE);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(NE);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression GT expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(GT);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(GT);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression GE expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(GE);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(GE);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression LT expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(LT);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(LT);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression LE expression
-             { checkCompare($1, $3);
-               $$ = mkTreeNode(LE);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(LE);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCompare($$);
              }
            | expression PLUS expression
-             { checkCalc($1, $3);
-               $$ = mkTreeNode(PLUS);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(PLUS);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCalc($$);
              }
            | expression MINUS expression
-             { checkCalc($1, $3);
-               $$ = mkTreeNode(MINUS);
+             { $$ = mkTreeNode(MINUS);
                $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCalc($$);
              }
            | expression TIMES expression
-             { checkCalc($1, $3);
-               $$ = mkTreeNode(TIMES);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(TIMES);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCalc($$);
              }
            | expression OVER expression
-             { checkCalc($1, $3);
-               $$ = mkTreeNode(OVER);
-               $$->type = T_Long;
+             { $$ = mkTreeNode(OVER);
                $$->children[0] = $1;
                $$->children[1] = $3;
+               checkCalc($$);
              }
            | LP expression RP { $$ = $2; }
            | var_ref { $$ = $1; }

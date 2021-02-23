@@ -47,20 +47,29 @@ void checkAssign(TreeNode *t1, TreeNode *t2) {
   }
 }
 
-void checkCompare(TreeNode *t1, TreeNode *t2) {
+void checkCompare(TreeNode *t) {
+  TreeNode *t1 = t->children[0], *t2 = t->children[1];
   if (!isComparable(t1->type, t2->type)) {
     fprintf(stderr, "Error: wrong types for comparison at line %d\n", lineno);
     hasError = 1;
+  } else {
+    t->type = T_Long;
   }
 }
 
-void checkCalc(TreeNode *t1, TreeNode *t2) {
+/* 1. check the type between two operands 
+ * 2. set the type for the target parent node */
+void checkCalc(TreeNode *t) {
+  TreeNode *t1 = t->children[0], *t2 = t->children[1];
   if (isPointerType(t1->type) && isNumberType(t2->type)) {
     t2->attr.val *= getScaleSize(t1->type);
+    t->type = t1->type;
   } else if (isNumberType(t1->type) && isPointerType(t2->type)) {
     t1->attr.val *= getScaleSize(t2->type);
+    t->type = t2->type;
   } else if (!isComparable(t1->type, t2->type)) {
     fprintf(stderr, "Error: wrong types for arithmetic calculation at line %d\n", lineno);
+    t->type = T_Long;
     hasError = 1;
   }
 }
