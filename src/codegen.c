@@ -52,7 +52,7 @@ static void cg_preamble();
 void cg_func_preamble(TreeNode *t);
 static void cg_func_postamble(TreeNode *t);
 /* general statments */
-int cg_call(int r, int id);
+int cg_call(TreeNode *t);
 static int cg_loadnum(long value);
 static int cg_loadvar(TreeNode *t);
 static void cg_type(int type, int val);
@@ -151,10 +151,34 @@ static void cg_func_postamble(TreeNode *t) {
   );
 }
 
-int cg_call(int r, int id) {
-  cg_comment("call function");
-  fprintf(Outfile, "\tmovq\t%s, %%rdi\n", reglist[r]);
-  fprintf(Outfile, "\tcall\t%s\n", getIdentName(id));
+int cg_call(TreeNode *t) {
+  cg_comment("func call");
+  int id = t->children[0]->attr.id;
+  char *name = getIdentName(id);
+  int pushed[6] = {0};
+  TreeNode *tmp;
+  int i = 0;   // argument index
+  for (tmp = t->children[1]; tmp; tmp = tmp->sibling) {
+    int tmpr = cg_eval(tmp);
+    // not free
+    if (regs[RDI + i] == 0) {
+      fprintf(Outfile, "\tpushq\t%s\n", reglist[RDI + i]);
+      pushed[i] = 1;
+    }
+    fprintf(Outfile, "\tmovq\t%s, %s\n", reglist[tmpr], reglist[RDI + i]);
+    free_reg(tmpr);
+    regs[RDI + i] = 0;
+    i++;
+  }
+  fprintf(Outfile, "\tcall\t%s\n", name);
+  for (i = 0; i < 6; i++) {
+    if (pushed[i]) {
+      fprintf(Outfile, "\tpopq\t%s\n", reglist[RDI + i]);
+    } else {
+      regs[RDI + i] = 1; // set free after func call
+    }
+  }
+  int r = allocate_reg();
   fprintf(Outfile, "\tmovq\t%%rax, %s\n", reglist[r]);
   return r;
 }
@@ -167,12 +191,20 @@ static int cg_loadnum(long value) {
 }
 
 static int cg_loadvar(TreeNode *t) {
+  int r;
   int id = t->attr.id;
-  int r = allocate_reg();
-  int size = getIdentSize(id);
-  int tmpr = cg_address(t);
-  fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[tmpr], getSizeReg(size, r));
-  free_reg(tmpr);
+  int scope = getIdentScope(id);
+  if (scope == Scope_Para) {
+    int idx = getIdentOffset(id);
+    regs[RDI+idx] = 0;
+    return RDI+idx;
+  } else {
+    r = allocate_reg();
+    int size = getIdentSize(id);
+    int tmpr = cg_address(t);
+    fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[tmpr], getSizeReg(size, r));
+    free_reg(tmpr);
+  }
   return r;
 }
 
@@ -447,8 +479,7 @@ static int cg_address(TreeNode *t) {
 
 static int cg_eval(TreeNode *root) {
   if (root->tok == CALL) {
-    int r = cg_eval(root->children[1]);
-    return cg_call(r, root->children[0]->attr.id);
+    return cg_call(root);
   } else if (root->tok == ASTERISK) {
     cg_comment("dereference");
     int r = cg_eval(root->children[0]);
@@ -568,7 +599,7 @@ static void genAST(TreeNode *root) {
       cg_return(cg_eval(root->children[0]), root->children[0]->type);
       break;
     case CALL:
-      free_reg(cg_call(cg_eval(root->children[1]), root->children[0]->attr.id));
+      free_reg(cg_call(root));
       break;
     default:
       fprintf(stderr, "Internal Error: unknown sibling type %d\n", root->tok);

@@ -5,6 +5,8 @@
 
 #define FNCOUNT 128
 
+int args = 0;
+
 typedef struct funcRange {
   int flag;
   int start;
@@ -99,6 +101,12 @@ int newIdent(char *s, int kind, int type, int scope) {
   SymTab[idx].type = type;
   SymTab[idx].arr = NULL;
   SymTab[idx].scope = scope;
+  if (type == Sym_Func) {
+    args = 0;
+  }
+  if (scope == Scope_Para) {
+    SymTab[idx].offset = args++;
+  }
   return idx;
 }
 

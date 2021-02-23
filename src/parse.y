@@ -232,6 +232,7 @@ func_declaration : type_specifier var LP parameter_list RP compound_statement
                      }
                      setIdentOffset($2->attr.id, localOffset);
                      setFunctionRange($2->attr.id);
+                     localOffset = 0;
                    }
                  ;
 
