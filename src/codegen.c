@@ -4,7 +4,7 @@
 #include "util.h"
 #include <stdlib.h>
 
-#define REGCOUNT 12
+#define REGCOUNT 10
 
 enum {
   SEC_Data, SEC_Text
@@ -12,13 +12,13 @@ enum {
 
 /* 0: busy     1: free */
 static int regs[REGCOUNT];
-static char *reglist[REGCOUNT] = {"%rax", "%rbx", "%rcx", "%rdx", "%rsi", "%rdi", "%r8", "%r9", "%r10", "%r11"};
-static char *lreglist[REGCOUNT] = {"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "%r8d", "%r9d", "%r10d", "%r11d"};
-static char *breglist[REGCOUNT] = {"%al", "%bl", "%cl", "%dl", "%sil", "%dil", "%r8b", "%r9b", "%r10b", "%r11b"};
+static char *reglist[REGCOUNT] = {"%rax",  "%rbx", "%r10", "%r11", "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
+static char *lreglist[REGCOUNT] = {"%eax", "%ebx", "%r10d", "%r11d", "%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
+static char *breglist[REGCOUNT] = {"%al", "%bl", "%r10b", "%r11b", "%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
 static char *setlist[REGCOUNT] = {"sete", "setne", "setle", "setl", "setge", "setg"};
 static char *movcmd[3] = {"movb", "movl", "movq"};
 // static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
-enum {RAX, RBX, RCX, RDX, RSI, RDI, R8, R9, R10, R11};
+enum {RAX, RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9};
 // the next available label
 static int curLab = 1;
 static int isAssign = 1;

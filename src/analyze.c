@@ -42,14 +42,14 @@ static int hasReturn(TreeNode *t) {
 /* check type when assigning */
 void checkAssign(TreeNode *t1, TreeNode *t2) {
   if (!isComparable(t1->type, t2->type)) {
-    fprintf(stderr, "Error: assign between two types that are not compatible at line %d\n", lineno);
+    fprintf(stderr, "Error: assignment between two types that are not compatible at line %d\n", lineno);
     hasError = 1;
   }
 }
 
 void checkCompare(TreeNode *t1, TreeNode *t2) {
   if (!isComparable(t1->type, t2->type)) {
-    fprintf(stderr, "Error: wrong types for comparison at line %d", lineno);
+    fprintf(stderr, "Error: wrong types for comparison at line %d\n", lineno);
     hasError = 1;
   }
 }
@@ -59,8 +59,8 @@ void checkCalc(TreeNode *t1, TreeNode *t2) {
     t2->attr.val *= getScaleSize(t1->type);
   } else if (isNumberType(t1->type) && isPointerType(t2->type)) {
     t1->attr.val *= getScaleSize(t2->type);
-  } if (!isComparable(t1->type, t2->type)) {
-    fprintf(stderr, "Error: wrong types for arithmetic calculation at line %d", lineno);
+  } else if (!isComparable(t1->type, t2->type)) {
+    fprintf(stderr, "Error: wrong types for arithmetic calculation at line %d\n", lineno);
     hasError = 1;
   }
 }

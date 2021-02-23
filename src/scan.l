@@ -13,7 +13,9 @@
   int lineno = 1;
   extern int traceScan;
   static int isFirstTime = 1;
-  int scopeAttr;
+  static int scopeStack[128];
+  int top = -1;
+  int scopeAttr = Scope_Glob;
 %}
 
 quote      \'
@@ -52,13 +54,16 @@ space      [ \t]+
 "*"           { return TIMES;     }
 "/"           { return OVER;      }
 ";"           { return SEMI;      }
-"("           { scopeAttr = Scope_Para;
+"("           { scopeStack[++top] = scopeAttr;
+                scopeAttr = Scope_Para;
                 return LP;        }
-")"           { scopeAttr = Scope_Glob;
+")"           { scopeAttr = scopeStack[top--];
                 return RP;        }
-"{"           { scopeAttr = Scope_Local;
+"{"           { scopeStack[++top] = scopeAttr;
+                scopeAttr = Scope_Local;
                 return LC;        }
-"}"           { return RC;        }
+"}"           { scopeAttr = scopeStack[top--];
+                return RC;        }
 "["           { return LS;        }
 "]"           { return RS;        }
 \n            { lineno++;         }
