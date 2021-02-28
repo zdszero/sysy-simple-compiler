@@ -199,11 +199,16 @@ static int cg_loadvar(TreeNode *t) {
     regs[RDI+idx] = 0;
     return RDI+idx;
   } else {
-    r = allocate_reg();
-    int size = getIdentSize(id);
-    int tmpr = cg_address(t);
-    fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[tmpr], getSizeReg(size, r));
-    free_reg(tmpr);
+    int kind = getIdentKind(t->attr.id);
+    if (kind == Sym_Array && !t->children[0]) {
+      r = cg_address(t);
+    } else {
+      r = allocate_reg();
+      int size = getIdentSize(id);
+      int tmpr = cg_address(t);
+      fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[tmpr], getSizeReg(size, r));
+      free_reg(tmpr);
+    }
   }
   return r;
 }
@@ -458,14 +463,16 @@ static int cg_address(TreeNode *t) {
   int kind = getIdentKind(id);
   int type = getIdentType(id);
   int size = getTypeSize(type);
-  int r = allocate_reg();
+  int r;
   if (kind == Sym_Array) {
-    int br = getArrayBase(t);
-    int ir = getArrayIndex(t);
-    fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", reglist[br], reglist[ir], size, reglist[r]);
-    free_reg(br);
-    free_reg(ir);
+    r = getArrayBase(t);
+    if (t->children[0]) {
+      int ir = getArrayIndex(t);
+      fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", reglist[r], reglist[ir], size, reglist[r]);
+      free_reg(ir);
+    }
   } else if (kind == Sym_Var) {
+    r = allocate_reg();
     if (scope == Scope_Glob) {
       char *name = getIdentName(id);
       fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
@@ -473,6 +480,9 @@ static int cg_address(TreeNode *t) {
       int offset = getIdentOffset(id);
       fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, reglist[r]);
     }
+  } else {
+    fprintf(stderr, "Internal Error: parameter should not be here\n");
+    exit(1);
   }
   return r;
 }

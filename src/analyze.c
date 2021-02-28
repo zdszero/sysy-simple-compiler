@@ -41,6 +41,9 @@ static int hasReturn(TreeNode *t) {
 
 /* check type when assigning */
 void checkAssign(TreeNode *t1, TreeNode *t2) {
+  int kind = getIdentKind(t2->attr.id);
+  if (kind == Sym_Array && !t2->children[0])
+    t2->type = pointerTo(t2->type);
   if (!isComparable(t1->type, t2->type)) {
     fprintf(stderr, "Error: assignment between two types that are not compatible at line %d\n", lineno);
     hasError = 1;
