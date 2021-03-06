@@ -12,13 +12,13 @@ enum {
 
 /* 0: busy     1: free */
 static int regs[REGCOUNT];
-static char *reglist[REGCOUNT] = {"%rax",  "%rbx", "%r10", "%r11", "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9"};
-static char *lreglist[REGCOUNT] = {"%eax", "%ebx", "%r10d", "%r11d", "%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d"};
-static char *breglist[REGCOUNT] = {"%al", "%bl", "%r10b", "%r11b", "%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b"};
-static char *setlist[REGCOUNT] = {"sete", "setne", "setle", "setl", "setge", "setg"};
-static char *movcmd[3] = {"movb", "movl", "movq"};
+static char *reglist[REGCOUNT]  = { "%rbx", "%r10", "%r11", "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9", "%rax"};
+static char *lreglist[REGCOUNT] = { "%ebx", "%r10d", "%r11d", "%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d", "%eax"};
+static char *breglist[REGCOUNT] = { "%bl", "%r10b", "%r11b", "%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b", "%al"};
+static char *setlist[REGCOUNT]  = { "sete", "setne", "setle", "setl", "setge", "setg"};
+static char *movcmd[3]          = { "movb", "movl", "movq"};
 // static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
-enum {RAX, RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9};
+enum {RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9, RAX};
 // the next available label
 static int curLab = 1;
 static int isAssign = 1;
@@ -53,7 +53,7 @@ static void cg_preamble();
 void cg_func_preamble(TreeNode *t);
 static void cg_func_postamble(TreeNode *t);
 /* general statments */
-int cg_call(TreeNode *t);
+static int cg_call(TreeNode *t);
 static int cg_loadnum(long value);
 static int cg_loadvar(TreeNode *t);
 static void cg_type(int type, int val);
@@ -152,7 +152,7 @@ static void cg_func_postamble(TreeNode *t) {
   );
 }
 
-int cg_call(TreeNode *t) {
+static int cg_call(TreeNode *t) {
   cg_comment("func call");
   int id = t->children[0]->attr.id;
   char *name = getIdentName(id);
@@ -161,7 +161,6 @@ int cg_call(TreeNode *t) {
   int i = 0;   // argument index
   for (tmp = t->children[1]; tmp; tmp = tmp->sibling) {
     int tmpr = cg_eval(tmp);
-    // not free
     if (regs[RDI + i] == 0) {
       fprintf(Outfile, "\tpushq\t%s\n", reglist[RDI + i]);
       pushed[i] = 1;
@@ -171,12 +170,22 @@ int cg_call(TreeNode *t) {
     regs[RDI + i] = 0;
     i++;
   }
+  for (int i = 0; i < RDI; i++) {
+    if (regs[i] == 0) {
+      fprintf(Outfile, "\tpushq\t%s\n", reglist[i]);
+    }
+  }
   fprintf(Outfile, "\tcall\t%s\n", name);
-  for (i = 0; i < 6; i++) {
+  for (int i = RDI-1; i >= 0; i--) {
+    if (regs[i] == 0) {
+      fprintf(Outfile, "\tpopq\t%s\n", reglist[i]);
+    }
+  }
+  for (i = 5; i >= 0; i--) {
     if (pushed[i]) {
       fprintf(Outfile, "\tpopq\t%s\n", reglist[RDI + i]);
     } else {
-      regs[RDI + i] = 1; // set free after func call
+      regs[RDI + i] = 1;
     }
   }
   int r = allocate_reg();
@@ -413,6 +422,7 @@ static void cg_return(int r, int type) {
       fprintf(stderr, "Internal Error: unknown return type %d\n", type);
       exit(1);
   }
+  free_reg(r);
   cg_comment("function postamble");
   cg_func_postamble(tmpfn);
 }
