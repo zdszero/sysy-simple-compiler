@@ -6,6 +6,7 @@
 #define FNCOUNT 128
 
 int args = 0;
+static int lastFn;
 
 typedef struct funcRange {
   int flag;
@@ -35,10 +36,15 @@ __attribute__((constructor)) static void initSymtab() {
 }
 
 /* range: (Locals, lastLocal] */
-void setFunctionRange(int id) {
+void setFuncRange(int id) {
   ranges[id].start = lastLocal;
   ranges[id].end = Locals;
   ranges[id].flag = 1;
+  lastLocal = Locals;
+}
+
+void updateFuncRange(int id) {
+  ranges[id].end = Locals;
   lastLocal = Locals;
 }
 
@@ -101,9 +107,6 @@ int newIdent(char *s, int kind, int type, int scope) {
   SymTab[idx].type = type;
   SymTab[idx].arr = NULL;
   SymTab[idx].scope = scope;
-  if (type == Sym_Func) {
-    args = 0;
-  }
   if (scope == Scope_Para) {
     SymTab[idx].offset = args++;
   }
@@ -116,6 +119,8 @@ void setIdentType(int id, int type) {
 
 void setIdentKind(int id, int kind) {
   SymTab[id].kind = kind;
+  if (kind == Sym_Func)
+    lastFn = id;
 }
 
 void setIdentOffset(int id, int offset) {
@@ -130,7 +135,7 @@ int getIdentId(char *s) {
       if (strcmp(s, SymTab[i].name) == 0)
         return i;
   } else {
-    for (i = lastLocal; i > Locals && SymTab[i].name != NULL; i--)
+    for (i = ranges[lastFn].start; i > Locals && SymTab[i].name != NULL; i--)
       if (strcmp(s, SymTab[i].name) == 0)
         return i;
     for (i = 0; i < Symbols && SymTab[i].name != NULL; i++)

@@ -24,6 +24,7 @@ static int curLab = 1;
 static int isAssign = 1;
 static int comment = 1;
 static int curSec = -1;
+static TreeNode *tmpfn;
 
 /********************************
  *  function declaration        *
@@ -197,7 +198,9 @@ static int cg_loadvar(TreeNode *t) {
   if (scope == Scope_Para) {
     int idx = getIdentOffset(id);
     regs[RDI+idx] = 0;
-    return RDI+idx;
+    int r = allocate_reg();
+    fprintf(Outfile, "\tmovq\t%s, %s\n", reglist[RDI+idx], reglist[r]);
+    return r;
   } else {
     int kind = getIdentKind(t->attr.id);
     if (kind == Sym_Array && !t->children[0]) {
@@ -410,6 +413,8 @@ static void cg_return(int r, int type) {
       fprintf(stderr, "Internal Error: unknown return type %d\n", type);
       exit(1);
   }
+  cg_comment("function postamble");
+  cg_func_postamble(tmpfn);
 }
 
 static int getArrayBase(TreeNode *t) {
@@ -550,10 +555,9 @@ static void genAST(TreeNode *root) {
   switch (root->tok) {
     case FUNC:
       cg_comment("function preamble");
-      cg_func_preamble(root->children[0]);
+      tmpfn = root->children[0];
+      cg_func_preamble(tmpfn);
       genAST(root->children[1]);
-      cg_comment("function postamble");
-      cg_func_postamble(root->children[0]);
       break;
     case DECL:
       for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {

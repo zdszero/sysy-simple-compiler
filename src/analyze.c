@@ -74,6 +74,8 @@ void checkCalc(TreeNode *t) {
     fprintf(stderr, "Error: wrong types for arithmetic calculation at line %d\n", lineno);
     t->type = T_Long;
     hasError = 1;
+  } else {
+    t->type = t1->type;
   }
 }
 
@@ -126,10 +128,10 @@ void checkCall(TreeNode *t) {
   }
   int count = getFuncArgs(id);
   if (args < count) {
-    fprintf(stderr, "Error: too many arguments when calling function %s in line %d\n", getIdentName(id), lineno);
+    fprintf(stderr, "Error: missing arguments when calling function %s in line %d\n", getIdentName(id), lineno);
     hasError = 1;
   } else if (args > count) {
-    fprintf(stderr, "Error: missing arguments when calling function %s in line %d\n", getIdentName(id), lineno);
+    fprintf(stderr, "Error: too many arguments when calling function %s in line %d\n", getIdentName(id), lineno);
     hasError = 1;
   } else {
     int idx = 0;

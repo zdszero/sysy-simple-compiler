@@ -162,6 +162,7 @@ var_ref : TIMES var_ref
           }
         | var_ref LP expression_list RP
           { $$ = mkTreeNode(CALL);
+            $$->type = $1->type;
             $$->children[0] = $1;
             $$->children[1] = $3;
             checkCall($$);
@@ -204,19 +205,12 @@ expressions : expressions COMMA expression
             | expression { $$ = $1; }
             ;
 
-func_declaration : type_specifier var LP parameter_list RP compound_statement
-                   { $$ = mkTreeNode(FUNC);
-                     setIdentType($2->attr.id, $1->type);
-                     $2->type = $1->type;
-                     setIdentKind($2->attr.id, Sym_Func);
-                     $$->children[0] = $2;
-                     $$->children[1] = $6;
-                     $$->children[2] = $4;
-                     checkHasReturn($1, $6, $2->attr.id);
-                     free($1);
-                     scopeAttr = Scope_Glob;
+func_declaration : func_head compound_statement
+                   { $$ = $1;
+                     $$->children[1] = $2;
+                     checkHasReturn($$->children[0], $2, $1->children[0]->attr.id);
                      /* resolve offset for each symbol */
-                     for (TreeNode *t = $6; t; t = t->sibling) {
+                     for (TreeNode *t = $2; t; t = t->sibling) {
                        if (t->tok == DECL) {
                          for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
                            int type = tmp->type;
@@ -230,11 +224,23 @@ func_declaration : type_specifier var LP parameter_list RP compound_statement
                          }
                        }
                      }
-                     setIdentOffset($2->attr.id, localOffset);
-                     setFunctionRange($2->attr.id);
+                     int id = $$->children[0]->attr.id;
+                     updateFuncRange(id);
+                     setIdentOffset(id, localOffset);
                      localOffset = 0;
                    }
                  ;
+
+func_head : type_specifier var LP parameter_list RP
+            { $$ = mkTreeNode(FUNC);
+              setIdentType($2->attr.id, $1->type);
+              $2->type = $1->type;
+              setIdentKind($2->attr.id, Sym_Func);
+              $$->children[0] = $2;
+              $$->children[2] = $4;
+              setFuncRange($2->attr.id);
+              free($1);
+            }
 
 parameter_list : parameters
                  { $$ = $1; }
@@ -417,7 +423,6 @@ expression : expression AND expression
              }
            | expression MINUS expression
              { $$ = mkTreeNode(MINUS);
-               $$->type = T_Long;
                $$->children[0] = $1;
                $$->children[1] = $3;
                checkCalc($$);
