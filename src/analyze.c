@@ -30,15 +30,6 @@ static int isComparable(int t1, int t2) {
   return 1;
 }
 
-/* return true if the last sibling is return type */
-static int hasReturn(TreeNode *t) {
-  while (t->sibling)
-    t = t->sibling;
-  if (t->tok == RETURN)
-    return 1;
-  return 0;
-}
-
 /* check type when assigning */
 void checkAssign(TreeNode *t1, TreeNode *t2) {
   int kind = getIdentKind(t2->attr.id);
@@ -79,12 +70,27 @@ void checkCalc(TreeNode *t) {
   }
 }
 
-void checkHasReturn(TreeNode *t1, TreeNode *t2, int id) {
-  if (t1->type == T_Void && hasReturn(t2)) {
-    fprintf(stderr, "Error: return statment in void function %s\n", getIdentName(id));
-    hasError = 1;
-  } else if (t1->type != T_Void && !hasReturn(t2)) {
-    fprintf(stderr, "Error: missing return statement in function %s\n", getIdentName(id));
+void checkReturn(TreeNode *t) {
+  int type = t->children[0]->type;
+  int flag = 0;
+  TreeNode *tmp;
+  for (tmp = t->children[1]; tmp; tmp = tmp->sibling) {
+    if (tmp->tok == RETURN) {
+      flag = 1;
+      break;
+    }
+  }
+  if (type == T_Void && !flag)
+    return;
+  if (type == T_Void && flag) {
+    if (tmp->children[0]) {
+      fprintf(stderr, "line %d: cannot return value in void function\n", lineno);
+      hasError = 1;
+    }
+    return;
+  }
+  if (!flag || !tmp->children[0]) {
+    fprintf(stderr, "line %d: return value is missing\n", lineno);
     hasError = 1;
   }
 }

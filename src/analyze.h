@@ -6,7 +6,7 @@
 void checkAssign(TreeNode *t1, TreeNode *t2);
 void checkCompare(TreeNode *t);
 void checkCalc(TreeNode *t);
-void checkHasReturn(TreeNode *t1, TreeNode *t2, int id);
+void checkReturn(TreeNode *t);
 void checkArray(TreeNode *t);
 void checkCall(TreeNode *t);
 

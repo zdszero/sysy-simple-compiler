@@ -67,7 +67,7 @@ static int cg_compare(int r1, int r2, int idx);
 static void cg_jump(char *how, int curLab);
 static int cg_logic_and(int r1, int r2);
 static int cg_logic_or(int r1, int r2);
-static void cg_return(int r, int type);
+static void cg_return(TreeNode *t);
 static int cg_eval(TreeNode *root);
 static void genAST(TreeNode *root);
 void genCode(TreeNode *root);
@@ -325,12 +325,18 @@ static void cg_declaration(TreeNode *t) {
 }
 
 static void cg_assign(TreeNode *t, int r) {
-  int id = t->attr.id;
-  int size = getIdentSize(id);
-  int tmpr = cg_address(t);
-  fprintf(Outfile, "\t%s\t%s, (%s)\n", getSizeMov(size), getSizeReg(size, r), reglist[tmpr]);
+  cg_comment("assign");
+  int size = getIdentSize(t->attr.id);
+  int scope = getIdentScope(t->attr.id);
+  if (scope == Scope_Para) {
+    int idx = getIdentOffset(t->attr.id);
+    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, r), getSizeReg(size, RDI+idx));
+  } else {
+    int tmpr = cg_address(t);
+    fprintf(Outfile, "\t%s\t%s, (%s)\n", getSizeMov(size), getSizeReg(size, r), reglist[tmpr]);
+    free_reg(tmpr);
+  }
   free_reg(r);
-  free_reg(tmpr);
 }
 
 /*
@@ -407,22 +413,12 @@ static int cg_logic_or(int r1, int r2) {
 }
 
 /* returned value is stored in register r, switch type according to id */
-static void cg_return(int r, int type) {
-  switch (type) {
-    case T_Char:
-      fprintf(Outfile, "\tmovb\t%s, %%al\n", breglist[r]);
-      break;
-    case T_Int:
-      fprintf(Outfile, "\tmovl\t%s, %%eax\n", lreglist[r]);
-      break;
-    case T_Long:
-      fprintf(Outfile, "\tmovq\t%s, %%rax\n", reglist[r]);
-      break;
-    default:
-      fprintf(stderr, "Internal Error: unknown return type %d\n", type);
-      exit(1);
+static void cg_return(TreeNode *t) {
+  if (t->children[0]) {
+    int r = cg_eval(t->children[0]);
+    fprintf(Outfile, "\tmovq\t%s, %%rax\n", reglist[r]);
+    free_reg(r);
   }
-  free_reg(r);
   cg_comment("function postamble");
   cg_func_postamble(tmpfn);
 }
@@ -514,7 +510,7 @@ static int cg_eval(TreeNode *root) {
     cg_comment("get address");
     return cg_address(root->children[0]);
   } else if (root->tok == IDENT) {
-      return cg_loadvar(root);
+    return cg_loadvar(root);
   }
   int leftreg, rightreg;
   /* recursion for both left and right */
@@ -575,7 +571,6 @@ static void genAST(TreeNode *root) {
       }
       break;
     case ASSIGN:
-      cg_comment("assign");
       isAssign = 1;
       r = cg_eval(root->children[1]);
       cg_assign(root->children[0], r);
@@ -620,7 +615,7 @@ static void genAST(TreeNode *root) {
       break;
     case RETURN:
       cg_comment("return");
-      cg_return(cg_eval(root->children[0]), root->children[0]->type);
+      cg_return(root);
       break;
     case CALL:
       free_reg(cg_call(root));

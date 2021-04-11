@@ -137,7 +137,7 @@ int getTypeSize(int type) {
     case T_Longptr:
       return 8;
     default:
-      fprintf(stderr, "Internal Error: unrecgnozied type %d\n", type);
+      fprintf(stderr, "Internal Error: unrecgonized type %d\n", type);
       exit(1);
   }
 }

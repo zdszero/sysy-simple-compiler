@@ -208,7 +208,7 @@ expressions : expressions COMMA expression
 func_declaration : func_head compound_statement
                    { $$ = $1;
                      $$->children[1] = $2;
-                     checkHasReturn($$->children[0], $2, $1->children[0]->attr.id);
+                     checkReturn($$);
                      /* resolve offset for each symbol */
                      for (TreeNode *t = $2; t; t = t->sibling) {
                        if (t->tok == DECL) {
@@ -268,7 +268,6 @@ parameter : type_specifier var
             }
           | type_specifier var LS RS
             { $$ = $2;
-              $$->type = pointerTo($1->type);
               setIdentType($$->attr.id, $$->type);
               setIdentKind($$->attr.id, Sym_Array);
               free($1);
@@ -364,6 +363,9 @@ expression_statement : expression SEMI { /* skip */ }
 return_statement : RETURN expression SEMI
                    { $$ = mkTreeNode(RETURN);
                      $$->children[0] = $2;
+                   }
+                 | RETURN SEMI
+                   {  $$ = mkTreeNode(RETURN);
                    }
                  ;
 
