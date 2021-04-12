@@ -268,6 +268,7 @@ parameter : type_specifier var
             }
           | type_specifier var LS RS
             { $$ = $2;
+              $$->type = $1->type;
               setIdentType($$->attr.id, $$->type);
               setIdentKind($$->attr.id, Sym_Array);
               free($1);

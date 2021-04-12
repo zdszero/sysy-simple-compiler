@@ -216,6 +216,8 @@ int getFuncParaType(int id, int idx) {
 }
 
 void printDimension(int id) {
+  if (!SymTab[id].arr)
+    return;
   DimRec *tmp = SymTab[id].arr->first;
   fprintf(Outfile, "(");
   while (tmp) {

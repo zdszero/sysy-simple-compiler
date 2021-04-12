@@ -1,5 +1,6 @@
 #include "symtab.h"
 #include "analyze.h"
+#include "util.h"
 #include <stdlib.h>
 
 int hasError = 0;
@@ -73,15 +74,18 @@ void checkCalc(TreeNode *t) {
 void checkReturn(TreeNode *t) {
   int type = t->children[0]->type;
   int flag = 0;
-  TreeNode *tmp;
+  TreeNode *tmp, *tmp2;
   for (tmp = t->children[1]; tmp; tmp = tmp->sibling) {
+    tmp2 = tmp;
     if (tmp->tok == RETURN) {
       flag = 1;
       break;
     }
   }
-  if (type == T_Void && !flag)
+  if (type == T_Void && !flag) {
+    tmp2->sibling = mkTreeNode(RETURN);
     return;
+  }
   if (type == T_Void && flag) {
     if (tmp->children[0]) {
       fprintf(stderr, "line %d: cannot return value in void function\n", lineno);
