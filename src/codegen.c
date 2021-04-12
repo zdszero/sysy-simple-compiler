@@ -207,9 +207,15 @@ static int cg_loadvar(TreeNode *t) {
   if (scope == Scope_Para) {
     int idx = getIdentOffset(id);
     regs[RDI+idx] = 0;
-    int r = allocate_reg();
-    fprintf(Outfile, "\tmovq\t%s, %s\n", reglist[RDI+idx], reglist[r]);
-    return r;
+    r = allocate_reg();
+    if (!t->children[0]) {
+      fprintf(Outfile, "\tmovq\t%s, %s\n", reglist[RDI+idx], reglist[r]);
+    } else {
+      int tmpr = cg_loadvar(t->children[0]);
+      int size = getIdentSize(t->attr.id);
+      fprintf(Outfile, "\tmovq\t(%s, %s, %d), %s\n", reglist[RDI+idx], reglist[tmpr], size, reglist[r]);
+      free_reg(tmpr);
+    }
   } else {
     int kind = getIdentKind(t->attr.id);
     if (kind == Sym_Array && !t->children[0]) {
@@ -328,13 +334,12 @@ static void cg_assign(TreeNode *t, int r) {
   cg_comment("assign");
   int size = getIdentSize(t->attr.id);
   int scope = getIdentScope(t->attr.id);
-  if (scope == Scope_Para) {
-    int idx = getIdentOffset(t->attr.id);
-    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, r), getSizeReg(size, RDI+idx));
-  } else {
-    int tmpr = cg_address(t);
+  int tmpr = cg_address(t);
+  if (t->children[0] || scope != Scope_Para) {
     fprintf(Outfile, "\t%s\t%s, (%s)\n", getSizeMov(size), getSizeReg(size, r), reglist[tmpr]);
     free_reg(tmpr);
+  } else {
+    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, r), getSizeReg(size, tmpr));
   }
   free_reg(r);
 }
@@ -475,6 +480,19 @@ static int cg_address(TreeNode *t) {
   int type = getIdentType(id);
   int size = getTypeSize(type);
   int r;
+  if (scope == Scope_Para) {
+    int idx = getIdentOffset(id);
+    if (kind == Sym_Array) {
+      int tmpr;
+      if (t->tok == IDENT)
+        tmpr = cg_loadvar(t->children[0]);
+      else
+        tmpr = cg_loadnum(t->children[0]->attr.val);
+      fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", reglist[RDI+idx], reglist[tmpr], size, reglist[tmpr]);
+      return tmpr;
+    }
+    return RDI + idx;
+  }
   if (kind == Sym_Array) {
     r = getArrayBase(t);
     if (t->children[0]) {
