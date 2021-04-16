@@ -56,10 +56,13 @@ declaration : var_declaraton   { $$ = $1; }
 var_declaraton : type_specifier var_list SEMI
                  { $$ = mkTreeNode(DECL);
                    for (TreeNode *t = $2; t != NULL; t = t->sibling) {
-                     setIdentType(t->attr.id, $1->type);
-                     t->type = $1->type;
-                     if (t->children[0])
-                       checkAssign(t, t->children[0]);
+                     int kind = getIdentKind(t->attr.id);
+                     if (kind == Sym_Array) {
+                       t->type = pointerTo($1->type);
+                     } else {
+                       t->type = $1->type;
+                     }
+                     setIdentType(t->attr.id, t->type);
                    }
                    $$->children[0] = $2;
                    free($1);
@@ -187,7 +190,7 @@ var_ref : TIMES var_ref
               hasError = 1;
             } else {
               $$->attr.id = id;
-              $$->type = getIdentType(id);
+              $$->type = getIdentType($$);
             }
           }
         ;
@@ -215,6 +218,9 @@ func_declaration : func_head compound_statement
                          for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
                            int type = tmp->type;
                            int id = tmp->attr.id;
+                           int kind = getIdentKind(id);
+                           if (kind == Sym_Array)
+                             type = valueAt(type);
                            int size = getTypeSize(type);
                            /* array */
                            if (getIdentKind(id) == Sym_Array)
@@ -262,13 +268,19 @@ parameters : parameters COMMA parameter
 parameter : type_specifier var
             { $$ = $2;
               $$->type = $1->type;
+              int size = getTypeSize($$->type);
+              localOffset -= size;
+              setIdentOffset($$->attr.id, localOffset);
               setIdentType($$->attr.id, $$->type);
               setIdentKind($$->attr.id, Sym_Var);
               free($1);
             }
           | type_specifier var LS RS
             { $$ = $2;
-              $$->type = $1->type;
+              $$->type = pointerTo($1->type);
+              int size = getTypeSize($$->type);
+              localOffset -= size;
+              setIdentOffset($$->attr.id, localOffset);
               setIdentType($$->attr.id, $$->type);
               setIdentKind($$->attr.id, Sym_Array);
               free($1);

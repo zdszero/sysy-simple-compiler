@@ -30,17 +30,18 @@ typedef struct symRec {
 
 int newIdent(char *t, int kind, int type, int scope);
 int getIdentId(char *);
-int getIdentType(int id);
+int getIdentType(TreeNode *t);
 int getIdentKind(int id);
 int getIdentOffset(int id);
 int getIdentScope(int id);
-int getIdentSize(int id);
+int getIdentSize(TreeNode *t);
 int getArrayTotal(int id, int level);
 int getArrayDimension(int id, int d);
 int getArrayDims(int id);
 int getFuncArgs(int id);
 int getFuncParaType(int id, int idx);
 char *getIdentName(int id);
+int getFuncParaSize(int id, int idx);
 void setArrayDimension(int id, int d, int val);
 void setIdentType(int id, int type);
 void setIdentKind(int id, int kind);

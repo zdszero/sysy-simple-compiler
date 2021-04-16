@@ -3,7 +3,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#define FNCOUNT 128
+#define FuncCnt 64
 
 int args = 0;
 static int lastFn;
@@ -22,17 +22,27 @@ static char *builtinFn[] = {
   "putch", "putint", "putlong", "putarray"
 };
 
-FuncRange ranges[FNCOUNT];
+FuncRange ranges[FuncCnt];
 
 __attribute__((constructor)) static void initSymtab() {
-  int size = sizeof(builtinFn) / sizeof(char *);
-  for (int i = 0; i < size; i++) {
+  for (int i = 0; i < 4; i++) {
     SymTab[i].name = builtinFn[i];
     SymTab[i].kind = Sym_Func;
     SymTab[i].type = T_Void;
     SymTab[i].scope = Scope_Glob;
+    if (i == 0) {
+      newIdent("aaa", Sym_Var, T_Char, Scope_Para);
+    } else if (i == 1) {
+      newIdent("bbb", Sym_Var, T_Int, Scope_Para);
+    } else if (i == 2) {
+      newIdent("ccc", Sym_Var, T_Long, Scope_Para);
+    } else {
+      newIdent("ddd", Sym_Var, T_Int, Scope_Para);
+      newIdent("eee", Sym_Var, T_Intptr, Scope_Para);
+    }
+    setFuncRange(i);
   }
-  Symbols = size;
+  Symbols = 4;
 }
 
 /* range: (Locals, lastLocal] */
@@ -86,7 +96,7 @@ int valueAt(int type) {
       newtype = T_Long;
       break;
     default:
-      fprintf(stderr, "Unrecognized type to dereference\n");
+      fprintf(stderr, "Unrecognized type to dereference in line %d\n", lineno);
       exit(1);
   }
   return newtype;
@@ -107,9 +117,6 @@ int newIdent(char *s, int kind, int type, int scope) {
   SymTab[idx].type = type;
   SymTab[idx].arr = NULL;
   SymTab[idx].scope = scope;
-  if (scope == Scope_Para) {
-    SymTab[idx].offset = args++;
-  }
   return idx;
 }
 
@@ -149,8 +156,15 @@ char *getIdentName(int id) {
   return SymTab[id].name;
 }
 
-int getIdentType(int id) {
-  return SymTab[id].type;
+int getIdentType(TreeNode *t) {
+  int type;
+  if (t->type)
+    type = t->type;
+  else
+    type = SymTab[t->attr.id].type;
+  if (SymTab[t->attr.id].kind == Sym_Array && t->children[0])
+    return valueAt(type);
+  return type;
 }
 
 int getIdentKind(int id) {
@@ -165,9 +179,8 @@ int getIdentScope(int id) {
   return SymTab[id].scope;
 }
 
-int getIdentSize(int id) {
-  int type = SymTab[id].type;
-  return getTypeSize(type);
+int getIdentSize(TreeNode *t) {
+  return getTypeSize(getIdentType(t));
 }
 
 int getArrayDimension(int id, int d) {
@@ -213,6 +226,11 @@ int getFuncArgs(int id) {
 
 int getFuncParaType(int id, int idx) {
   return SymTab[ranges[id].start-idx].type;
+}
+
+int getFuncParaSize(int id, int idx) {
+  int type = getFuncParaType(id, idx);
+  return getTypeSize(type);
 }
 
 void printDimension(int id) {
@@ -271,7 +289,7 @@ void printSymTab() {
   for (int i = 0; i < Symbols; i++)
     printSymbol(i);
   printf("\nLocals\n");
-  for (int i = 0; i < FNCOUNT; i++) {
+  for (int i = 0; i < FuncCnt; i++) {
     if (ranges[i].flag == 1) {
       printf("%s : ", SymTab[i].name);
       for (int j = ranges[i].start; j > ranges[i].end; j--) {

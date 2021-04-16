@@ -24,7 +24,7 @@ static int curLab = 1;
 static int isAssign = 1;
 static int comment = 1;
 static int curSec = -1;
-static TreeNode *tmpfn;
+static TreeNode *savedFn;
 
 /********************************
  *  function declaration        *
@@ -39,8 +39,6 @@ static void cg_section_text();
 static void cg_section_data();
 /* some help functions */
 static void cg_comment(char *msg);
-static int getArrayIndex(TreeNode *t);
-static int getArrayBase(TreeNode *t);
 static int array_glob_dfs(TreeNode *t, int type, int id, int level);
 static int array_local_dfs(TreeNode *t, int idx, int type, int id, int level);
 static char *getSizeReg(int size, int idx);
@@ -50,7 +48,8 @@ static void cg_label(int lab);
 static int cg_address(TreeNode *t);
 /* function */
 static void cg_preamble();
-void cg_func_preamble(TreeNode *t);
+static void cg_func_preamble(TreeNode *t);
+static void cg_func_load_params(TreeNode *t);
 static void cg_func_postamble(TreeNode *t);
 /* general statments */
 static int cg_call(TreeNode *t);
@@ -142,6 +141,17 @@ void cg_func_preamble(TreeNode *t) {
     name, name, name, offset);
 }
 
+static void cg_func_load_params(TreeNode *t) {
+  int cnt = 0;
+  for (TreeNode *tmp = t; tmp; tmp = tmp->sibling) {
+    int id = tmp->attr.id;
+    int offset = getIdentOffset(id);
+    int size = getIdentSize(tmp);
+    fprintf(Outfile, "\t%s\t%s, %d(%%rbp)\n", getSizeMov(size), getSizeReg(size, RDI + cnt), offset);
+    cnt++;
+  }
+}
+
 /* return 0 */
 static void cg_func_postamble(TreeNode *t) {
   int offset = getIdentOffset(t->attr.id);
@@ -156,38 +166,17 @@ static int cg_call(TreeNode *t) {
   cg_comment("func call");
   int id = t->children[0]->attr.id;
   char *name = getIdentName(id);
-  int pushed[6] = {0};
-  TreeNode *tmp;
-  int i = 0;   // argument index
-  for (tmp = t->children[1]; tmp; tmp = tmp->sibling) {
+  TreeNode *tmp = t->children[1];
+  int i = 0;
+  while (tmp) {
     int tmpr = cg_eval(tmp);
-    if (regs[RDI + i] == 0) {
-      fprintf(Outfile, "\tpushq\t%s\n", reglist[RDI + i]);
-      pushed[i] = 1;
-    }
-    fprintf(Outfile, "\tmovq\t%s, %s\n", reglist[tmpr], reglist[RDI + i]);
+    int size = getFuncParaSize(id, i);
+    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, tmpr), getSizeReg(size, RDI + i));
     free_reg(tmpr);
-    regs[RDI + i] = 0;
+    tmp = tmp->sibling;
     i++;
   }
-  for (int i = 0; i < RDI; i++) {
-    if (regs[i] == 0) {
-      fprintf(Outfile, "\tpushq\t%s\n", reglist[i]);
-    }
-  }
   fprintf(Outfile, "\tcall\t%s\n", name);
-  for (int i = RDI-1; i >= 0; i--) {
-    if (regs[i] == 0) {
-      fprintf(Outfile, "\tpopq\t%s\n", reglist[i]);
-    }
-  }
-  for (i = 5; i >= 0; i--) {
-    if (pushed[i]) {
-      fprintf(Outfile, "\tpopq\t%s\n", reglist[RDI + i]);
-    } else {
-      regs[RDI + i] = 1;
-    }
-  }
   int r = allocate_reg();
   fprintf(Outfile, "\tmovq\t%%rax, %s\n", reglist[r]);
   return r;
@@ -201,32 +190,16 @@ static int cg_loadnum(long value) {
 }
 
 static int cg_loadvar(TreeNode *t) {
+  int kind = getIdentKind(t->attr.id);
   int r;
-  int id = t->attr.id;
-  int scope = getIdentScope(id);
-  if (scope == Scope_Para) {
-    int idx = getIdentOffset(id);
-    regs[RDI+idx] = 0;
-    r = allocate_reg();
-    if (!t->children[0]) {
-      fprintf(Outfile, "\tmovq\t%s, %s\n", reglist[RDI+idx], reglist[r]);
-    } else {
-      int tmpr = cg_loadvar(t->children[0]);
-      int size = getIdentSize(t->attr.id);
-      fprintf(Outfile, "\tmovq\t(%s, %s, %d), %s\n", reglist[RDI+idx], reglist[tmpr], size, reglist[r]);
-      free_reg(tmpr);
-    }
+  if (kind == Sym_Array && !t->children[0]) {
+    int r = cg_address(t);
+    return r;
   } else {
-    int kind = getIdentKind(t->attr.id);
-    if (kind == Sym_Array && !t->children[0]) {
-      r = cg_address(t);
-    } else {
-      r = allocate_reg();
-      int size = getIdentSize(id);
-      int tmpr = cg_address(t);
-      fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[tmpr], getSizeReg(size, r));
-      free_reg(tmpr);
-    }
+    cg_comment("load value from address");
+    int size = getIdentSize(t);
+    r = cg_address(t);
+    fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[r], getSizeReg(size, r));
   }
   return r;
 }
@@ -306,6 +279,7 @@ static void cg_declaration(TreeNode *t) {
   int scope = getIdentScope(id);
   int kind = getIdentKind(id);
   if (kind == Sym_Array) {
+    type = valueAt(type);
     int total = getArrayTotal(id, 0);
     if (scope == Scope_Glob) {
       char *name = getIdentName(id);
@@ -332,7 +306,7 @@ static void cg_declaration(TreeNode *t) {
 
 static void cg_assign(TreeNode *t, int r) {
   cg_comment("assign");
-  int size = getIdentSize(t->attr.id);
+  int size = getIdentSize(t);
   int scope = getIdentScope(t->attr.id);
   int tmpr = cg_address(t);
   if (t->children[0] || scope != Scope_Para) {
@@ -425,39 +399,7 @@ static void cg_return(TreeNode *t) {
     free_reg(r);
   }
   cg_comment("function postamble");
-  cg_func_postamble(tmpfn);
-}
-
-static int getArrayBase(TreeNode *t) {
-  int r = allocate_reg();
-  int id = t->attr.id;
-  int scope = getIdentScope(id);
-  if (scope == Scope_Glob) {
-    char *name = getIdentName(id);
-    fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
-  } else {
-    int startOffset = getIdentOffset(id);
-    fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", startOffset, reglist[r]);
-  }
-  return r;
-}
-
-/* return the register that holds the idx of current array treenode */
-static int getArrayIndex(TreeNode *t) {
-    int r = allocate_reg(); // index reg
-    int id = t->attr.id;
-    int depth = 1;
-    fprintf(Outfile, "\tmovq\t$0, %s\n", reglist[r]);
-    for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
-      int dim = getArrayTotal(id, depth+1);
-      int tmpr = cg_eval(tmp);
-      if (dim > 1)
-        fprintf(Outfile, "\timulq\t$%d, %s\n", dim, reglist[tmpr]);
-      fprintf(Outfile, "\taddq\t%s, %s\n", reglist[tmpr], reglist[r]);
-      free_reg(tmpr);
-      depth++;
-    }
-    return r;
+  cg_func_postamble(savedFn);
 }
 
 static char *getSizeReg(int size, int idx) {
@@ -474,29 +416,52 @@ static char *getSizeMov(int size) {
 }
 
 static int cg_address(TreeNode *t) {
+  cg_comment("load address");
   int id = t->attr.id;
   int scope = getIdentScope(id);
   int kind = getIdentKind(id);
-  int type = getIdentType(id);
-  int size = getTypeSize(type);
   int r;
-  if (scope == Scope_Para) {
-    int idx = getIdentOffset(id);
-    if (kind == Sym_Array) {
-      int tmpr;
-      if (t->tok == IDENT)
-        tmpr = cg_loadvar(t->children[0]);
-      else
-        tmpr = cg_loadnum(t->children[0]->attr.val);
-      fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", reglist[RDI+idx], reglist[tmpr], size, reglist[tmpr]);
-      return tmpr;
-    }
-    return RDI + idx;
-  }
   if (kind == Sym_Array) {
-    r = getArrayBase(t);
+    int size;
+    r = allocate_reg();
+    // 获取数组的起始地址并且存储在寄存器r中
+    if (scope == Scope_Glob) {
+      char *name = getIdentName(id);
+      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
+    } else if (scope == Scope_Para) {
+      int offset = getIdentOffset(id);
+      TreeNode *tmp = t->children[0];
+      t->children[0] = NULL;
+      size = getIdentSize(t);
+      fprintf(Outfile, "\t%s\t%d(%%rbp), %s\n", getSizeMov(size), offset, getSizeReg(size, r));
+      t->children[0] = tmp;
+    } else {
+      int offset = getIdentOffset(id);
+      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, reglist[r]);
+    }
+    size = getIdentSize(t);
+    // 如果访问的是某个特定元素比如a[3]
     if (t->children[0]) {
-      int ir = getArrayIndex(t);
+      // 获取等价一维数组的下标并且存储在寄存器ir(index register)中
+      int ir = allocate_reg();
+      // 函数调用目前只支持一维数组
+      if (scope == Scope_Para) {
+        int tmpr = cg_eval(t->children[0]);
+        fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, tmpr), getSizeReg(size, ir));
+        free_reg(tmpr);
+      } else {
+        int depth = 1;
+        fprintf(Outfile, "\tmovq\t$0, %s\n", reglist[ir]);
+        for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
+          int dim = getArrayTotal(id, depth+1);
+          int tmpr = cg_eval(tmp);
+          if (dim > 1)
+            fprintf(Outfile, "\timulq\t$%d, %s\n", dim, reglist[tmpr]);
+          fprintf(Outfile, "\taddq\t%s, %s\n", reglist[tmpr], reglist[ir]);
+          free_reg(tmpr);
+          depth++;
+        }
+      }
       fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", reglist[r], reglist[ir], size, reglist[r]);
       free_reg(ir);
     }
@@ -505,7 +470,7 @@ static int cg_address(TreeNode *t) {
     if (scope == Scope_Glob) {
       char *name = getIdentName(id);
       fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
-    } else if (scope == Scope_Local) {
+    } else {
       int offset = getIdentOffset(id);
       fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, reglist[r]);
     }
@@ -579,8 +544,9 @@ static void genAST(TreeNode *root) {
   switch (root->tok) {
     case FUNC:
       cg_comment("function preamble");
-      tmpfn = root->children[0];
-      cg_func_preamble(tmpfn);
+      savedFn = root->children[0];
+      cg_func_preamble(savedFn);
+      cg_func_load_params(root->children[2]);
       genAST(root->children[1]);
       break;
     case DECL:

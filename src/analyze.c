@@ -33,10 +33,8 @@ static int isComparable(int t1, int t2) {
 
 /* check type when assigning */
 void checkAssign(TreeNode *t1, TreeNode *t2) {
-  int kind = getIdentKind(t2->attr.id);
-  if (kind == Sym_Array && !t2->children[0])
-    t2->type = pointerTo(t2->type);
-  if (!isComparable(t1->type, t2->type)) {
+  int type1 = getIdentType(t1), type2 = getIdentType(t2);
+  if (!isComparable(type1, type2)) {
     fprintf(stderr, "Error: assignment between two types that are not compatible at line %d\n", lineno);
     hasError = 1;
   }
@@ -44,7 +42,8 @@ void checkAssign(TreeNode *t1, TreeNode *t2) {
 
 void checkCompare(TreeNode *t) {
   TreeNode *t1 = t->children[0], *t2 = t->children[1];
-  if (!isComparable(t1->type, t2->type)) {
+  int type1 = getIdentType(t1), type2 = getIdentType(t2);
+  if (!isComparable(type1, type2)) {
     fprintf(stderr, "Error: wrong types for comparison at line %d\n", lineno);
     hasError = 1;
   } else {
@@ -56,18 +55,19 @@ void checkCompare(TreeNode *t) {
  * 2. set the type for the target parent node */
 void checkCalc(TreeNode *t) {
   TreeNode *t1 = t->children[0], *t2 = t->children[1];
-  if (isPointerType(t1->type) && isNumberType(t2->type)) {
-    t2->attr.val *= getScaleSize(t1->type);
-    t->type = t1->type;
-  } else if (isNumberType(t1->type) && isPointerType(t2->type)) {
-    t1->attr.val *= getScaleSize(t2->type);
-    t->type = t2->type;
-  } else if (!isComparable(t1->type, t2->type)) {
+  int type1 = getIdentType(t1), type2 = getIdentType(t2);
+  if (isPointerType(type1) && isNumberType(type2)) {
+    t2->attr.val *= getScaleSize(type1);
+    t->type = type1;
+  } else if (isNumberType(type1) && isPointerType(type2)) {
+    t1->attr.val *= getScaleSize(type2);
+    t->type = type2;
+  } else if (!isComparable(type1, type2)) {
     fprintf(stderr, "Error: wrong types for arithmetic calculation at line %d\n", lineno);
     t->type = T_Long;
     hasError = 1;
   } else {
-    t->type = t1->type;
+    t->type = type1;
   }
 }
 
