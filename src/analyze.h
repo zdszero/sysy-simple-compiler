@@ -1,5 +1,5 @@
 #ifndef __ANALYZE_H__
-#define __ANALYZE_H__ 
+#define __ANALYZE_H__
 
 #include "globals.h"
 

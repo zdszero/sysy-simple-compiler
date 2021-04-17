@@ -1,8 +1,8 @@
-#include "globals.h"
-#include "scan.h"
-#include "parse.h"
-#include "util.h"
 #include "codegen.h"
+#include "globals.h"
+#include "parse.h"
+#include "scan.h"
+#include "util.h"
 #include <stdlib.h>
 
 extern void printSymTab();
@@ -13,8 +13,7 @@ int generateCode = 1;
 
 FILE *Infile, *Outfile;
 
-int main(int argc, char *argv[])
-{
+int main(int argc, char *argv[]) {
   if (argc < 2) {
     fprintf(stderr, "usage: %s <filename>\n", argv[0]);
     exit(1);

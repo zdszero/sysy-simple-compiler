@@ -1,57 +1,59 @@
-#include "globals.h"
 #include "codegen.h"
+#include "globals.h"
 #include "symtab.h"
 #include "util.h"
 #include <stdlib.h>
 
 #define REGCOUNT 10
 
-enum {
-  SEC_Data, SEC_Text
-};
+enum { SEC_Data, SEC_Text };
 
-/* 0: busy     1: free */
-static int regs[REGCOUNT];
-static char *reglist[REGCOUNT]  = { "%rbx", "%r10", "%r11", "%rdi", "%rsi", "%rdx", "%rcx", "%r8", "%r9", "%rax"};
-static char *lreglist[REGCOUNT] = { "%ebx", "%r10d", "%r11d", "%edi", "%esi", "%edx", "%ecx", "%r8d", "%r9d", "%eax"};
-static char *breglist[REGCOUNT] = { "%bl", "%r10b", "%r11b", "%dil", "%sil", "%dl", "%cl", "%r8b", "%r9b", "%al"};
-static char *setlist[REGCOUNT]  = { "sete", "setne", "setle", "setl", "setge", "setg"};
-static char *movcmd[3]          = { "movb", "movl", "movq"};
-// static char *cmplist[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
-enum {RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9, RAX};
-// the next available label
-static int curLab = 1;
-static int isAssign = 1;
-static int comment = 1;
-static int curSec = -1;
-static TreeNode *savedFn;
+// 0：被占用    1：空闲
+static int Regs[REGCOUNT];
+static char *RegList[REGCOUNT] = {"%rbx", "%r10", "%r11", "%rdi", "%rsi",
+                                  "%rdx", "%rcx", "%r8",  "%r9",  "%rax"};
+static char *LRegList[REGCOUNT] = {"%ebx", "%r10d", "%r11d", "%edi", "%esi",
+                                   "%edx", "%ecx",  "%r8d",  "%r9d", "%eax"};
+static char *BRegList[REGCOUNT] = {"%bl", "%r10b", "%r11b", "%dil", "%sil",
+                                   "%dl", "%cl",   "%r8b",  "%r9b", "%al"};
+static char *SetList[REGCOUNT] = {"sete", "setne", "setle",
+                                  "setl", "setge", "setg"};
+static char *MovList[3] = {"movb", "movl", "movq"};
+static char *CmpList[3] = {"cmpb", "cmpl", "cmpq"};
+static char *JmpList[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
+enum { RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9, RAX };
+// 下一个可以使用的Label编号
+static int CurLab = 1;
+// 当前程序段：data，text
+static int CurSec = -1;
+// 是否存储cmp的结果到寄存器
+static int IsAssign = 1;
+// 是否在生成的汇编代码中使用注释
+static int CommentFlag = 1;
+// 暂存的函数结点
+static TreeNode *TmpFn;
 
 /********************************
  *  function declaration        *
  ********************************/
 
-/* register management */
 static int allocate_reg();
 static void freeall_regs();
 static void free_reg(int i);
-/* section management */
 static void cg_section_text();
 static void cg_section_data();
-/* some help functions */
 static void cg_comment(char *msg);
 static int array_glob_dfs(TreeNode *t, int type, int id, int level);
 static int array_local_dfs(TreeNode *t, int idx, int type, int id, int level);
 static char *getSizeReg(int size, int idx);
 static char *getSizeMov(int size);
-/* jump */
+static char *getSizeCmp(int size);
 static void cg_label(int lab);
 static int cg_address(TreeNode *t);
-/* function */
 static void cg_preamble();
 static void cg_func_preamble(TreeNode *t);
 static void cg_func_load_params(TreeNode *t);
 static void cg_func_postamble(TreeNode *t);
-/* general statments */
 static int cg_call(TreeNode *t);
 static int cg_loadnum(long value);
 static int cg_loadvar(TreeNode *t);
@@ -63,7 +65,7 @@ static int cg_sub(int r1, int r2);
 static int cg_mul(int r1, int r2);
 static int cg_div(int r1, int r2);
 static int cg_compare(int r1, int r2, int idx);
-static void cg_jump(char *how, int curLab);
+static void cg_jump(char *how, int lab);
 static int cg_logic_and(int r1, int r2);
 static int cg_logic_or(int r1, int r2);
 static void cg_return(TreeNode *t);
@@ -76,38 +78,36 @@ void genCode(TreeNode *root);
  ********************************/
 
 static void cg_section_text() {
-  if (curSec == SEC_Text)
+  if (CurSec == SEC_Text)
     return;
   fprintf(Outfile, "\t.text\n");
-  curSec = SEC_Text;
+  CurSec = SEC_Text;
 }
 
 static void cg_section_data() {
-  if (curSec == SEC_Data)
+  if (CurSec == SEC_Data)
     return;
   fprintf(Outfile, "\t.data\n");
-  curSec = SEC_Data;
+  CurSec = SEC_Data;
 }
 
 static void cg_comment(char *msg) {
-  if (comment) {
+  if (CommentFlag) {
     fprintf(Outfile, "\t# %s\n", msg);
   }
 }
 
-static void cg_label(int lab) {
-  fprintf(Outfile, "L%d:\n", lab);
-}
+static void cg_label(int lab) { fprintf(Outfile, "L%d:\n", lab); }
 
 static void freeall_regs() {
   for (int i = 0; i < REGCOUNT; i++)
-    regs[i] = 1;
+    Regs[i] = 1;
 }
 
 static int allocate_reg() {
   for (int i = 0; i < REGCOUNT; i++)
-    if (regs[i] == 1) {
-      regs[i] = 0;
+    if (Regs[i] == 1) {
+      Regs[i] = 0;
       return i;
     }
   fprintf(stderr, "Out of registers\n");
@@ -115,30 +115,28 @@ static int allocate_reg() {
 }
 
 static void free_reg(int i) {
-  if (regs[i] == 1) {
-    fprintf(stderr, "Error trying to free register %s which is already free\n", reglist[i]);
+  if (Regs[i] == 1) {
+    fprintf(stderr, "Error trying to free register %s which is already free\n",
+            RegList[i]);
     exit(1);
   }
-  regs[i] = 1;
+  Regs[i] = 1;
 }
 
-/* add printint function */
-static void cg_preamble() {
-  freeall_regs();
-}
+static void cg_preamble() { freeall_regs(); }
 
 void cg_func_preamble(TreeNode *t) {
   int id = t->attr.id;
   char *name = getIdentName(id);
   int offset = getIdentOffset(id);
   fprintf(Outfile,
-    "\t.globl\t%s\n"
-    "\t.type\t%s, @function\n"
-    "%s:\n"
-    "\tpushq\t%%rbp\n"
-    "\tmovq\t%%rsp, %%rbp\n"
-    "\taddq\t$%d, %%rsp\n",
-    name, name, name, offset);
+          "\t.globl\t%s\n"
+          "\t.type\t%s, @function\n"
+          "%s:\n"
+          "\tpushq\t%%rbp\n"
+          "\tmovq\t%%rsp, %%rbp\n"
+          "\taddq\t$%d, %%rsp\n",
+          name, name, name, offset);
 }
 
 static void cg_func_load_params(TreeNode *t) {
@@ -147,7 +145,8 @@ static void cg_func_load_params(TreeNode *t) {
     int id = tmp->attr.id;
     int offset = getIdentOffset(id);
     int size = getIdentSize(tmp);
-    fprintf(Outfile, "\t%s\t%s, %d(%%rbp)\n", getSizeMov(size), getSizeReg(size, RDI + cnt), offset);
+    fprintf(Outfile, "\t%s\t%s, %d(%%rbp)\n", getSizeMov(size),
+            getSizeReg(size, RDI + cnt), offset);
     cnt++;
   }
 }
@@ -156,36 +155,43 @@ static void cg_func_load_params(TreeNode *t) {
 static void cg_func_postamble(TreeNode *t) {
   int offset = getIdentOffset(t->attr.id);
   fprintf(Outfile,
-    "\taddq\t$%d, %%rsp\n"
-    "\tpopq\t%%rbp\n"
-    "\tret\n", -offset
-  );
+          "\taddq\t$%d, %%rsp\n"
+          "\tpopq\t%%rbp\n"
+          "\tret\n",
+          -offset);
 }
 
 static int cg_call(TreeNode *t) {
   cg_comment("func call");
   int id = t->children[0]->attr.id;
+  int type = t->children[0]->type;
   char *name = getIdentName(id);
   TreeNode *tmp = t->children[1];
   int i = 0;
   while (tmp) {
     int tmpr = cg_eval(tmp);
     int size = getFuncParaSize(id, i);
-    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, tmpr), getSizeReg(size, RDI + i));
+    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, tmpr),
+            getSizeReg(size, RDI + i));
     free_reg(tmpr);
     tmp = tmp->sibling;
     i++;
   }
   fprintf(Outfile, "\tcall\t%s\n", name);
-  int r = allocate_reg();
-  fprintf(Outfile, "\tmovq\t%%rax, %s\n", reglist[r]);
-  return r;
+  // 当函数调用出现在表达式当中时
+  if (type != T_Void) {
+    int r = allocate_reg();
+    fprintf(Outfile, "\tmovq\t%%rax, %s\n", RegList[r]);
+    return r;
+  }
+  // 当处理函数调用语句时，不需要返回值
+  return -1;
 }
 
 /* load the number value into a free register */
 static int cg_loadnum(long value) {
   int r = allocate_reg();
-  fprintf(Outfile, "\tmovq\t$%ld, %s\n", value, reglist[r]);
+  fprintf(Outfile, "\tmovq\t$%ld, %s\n", value, RegList[r]);
   return r;
 }
 
@@ -196,32 +202,32 @@ static int cg_loadvar(TreeNode *t) {
     int r = cg_address(t);
     return r;
   } else {
-    cg_comment("load value from address");
     int size = getIdentSize(t);
     r = cg_address(t);
-    fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), reglist[r], getSizeReg(size, r));
+    fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), RegList[r],
+            getSizeReg(size, r));
   }
   return r;
 }
 
 static void cg_type(int type, int val) {
   switch (type) {
-    case T_Char:
-      fprintf(Outfile, "\t.byte\t%d\n", val);
-      break;
-    case T_Int:
-      fprintf(Outfile, "\t.long\t%d\n", val);
-      break;
-    case T_Long:
-    case T_Charptr:
-    case T_Intptr:
-    case T_Longptr:
-      fprintf(Outfile, "\t.quad\t%d\n", val);
-      break;
-    default:
-      fprintf(stderr, "Internal Error: undefined data type %d\n", type);
-      exit(1);
-      break;
+  case T_Char:
+    fprintf(Outfile, "\t.byte\t%d\n", val);
+    break;
+  case T_Int:
+    fprintf(Outfile, "\t.long\t%d\n", val);
+    break;
+  case T_Long:
+  case T_Charptr:
+  case T_Intptr:
+  case T_Longptr:
+    fprintf(Outfile, "\t.quad\t%d\n", val);
+    break;
+  default:
+    fprintf(stderr, "Internal Error: undefined data type %d\n", type);
+    exit(1);
+    break;
   }
 }
 
@@ -232,7 +238,7 @@ static int array_glob_dfs(TreeNode *t, int type, int id, int level) {
   int count = 0;
   while (t) {
     if (t->tok == LEVEL) {
-      count += array_glob_dfs(t->children[0], type, id, level+1);
+      count += array_glob_dfs(t->children[0], type, id, level + 1);
     } else {
       cg_type(type, t->attr.val);
       count++;
@@ -254,7 +260,7 @@ static int array_local_dfs(TreeNode *t, int idx, int type, int id, int level) {
   int base = getIdentOffset(id);
   while (t) {
     if (t->tok == LEVEL) {
-      idx = array_local_dfs(t->children[0], idx, type, id, level+1);
+      idx = array_local_dfs(t->children[0], idx, type, id, level + 1);
       idx = (idx + dim) / dim * dim;
     } else {
       int val = t->attr.val;
@@ -310,10 +316,12 @@ static void cg_assign(TreeNode *t, int r) {
   int scope = getIdentScope(t->attr.id);
   int tmpr = cg_address(t);
   if (t->children[0] || scope != Scope_Para) {
-    fprintf(Outfile, "\t%s\t%s, (%s)\n", getSizeMov(size), getSizeReg(size, r), reglist[tmpr]);
+    fprintf(Outfile, "\t%s\t%s, (%s)\n", getSizeMov(size), getSizeReg(size, r),
+            RegList[tmpr]);
     free_reg(tmpr);
   } else {
-    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, r), getSizeReg(size, tmpr));
+    fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, r),
+            getSizeReg(size, tmpr));
   }
   free_reg(r);
 }
@@ -324,35 +332,35 @@ static void cg_assign(TreeNode *t, int r) {
  * FORMAT: op %r2, %r1
  */
 static int cg_add(int r1, int r2) {
-  fprintf(Outfile, "\taddq\t%s, %s\n", reglist[r2], reglist[r1]);
+  fprintf(Outfile, "\taddq\t%s, %s\n", RegList[r2], RegList[r1]);
   free_reg(r2);
   return r1;
 }
 
 static int cg_sub(int r1, int r2) {
-  fprintf(Outfile, "\tsubq\t%s, %s\n", reglist[r2], reglist[r1]);
+  fprintf(Outfile, "\tsubq\t%s, %s\n", RegList[r2], RegList[r1]);
   free_reg(r2);
   return r1;
 }
 
 static int cg_mul(int r1, int r2) {
-  fprintf(Outfile, "\timulq\t%s, %s\n", reglist[r2], reglist[r1]);
+  fprintf(Outfile, "\timulq\t%s, %s\n", RegList[r2], RegList[r1]);
   free_reg(r2);
   return r1;
 }
 
 /* r1: divident    r2: divisor */
 static int cg_div(int r1, int r2) {
-  if (regs[RAX] == 0)
+  if (Regs[RAX] == 0)
     fprintf(Outfile, "\tpushq\t%%rax\n");
   /* the divident is stored in %rax */
-  fprintf(Outfile, "\tmovq\t%s, %%rax\n", reglist[r1]);
+  fprintf(Outfile, "\tmovq\t%s, %%rax\n", RegList[r1]);
   /* change quad byte to octal byte */
   fprintf(Outfile, "\tcqo\n");
-  fprintf(Outfile, "\tidivq\t%s\n", reglist[r2]);
+  fprintf(Outfile, "\tidivq\t%s\n", RegList[r2]);
   /* store the result back into r1 */
-  fprintf(Outfile, "\tmovq\t%%rax, %s\n", reglist[r1]);
-  if (regs[RAX] == 0)
+  fprintf(Outfile, "\tmovq\t%%rax, %s\n", RegList[r1]);
+  if (Regs[RAX] == 0)
     fprintf(Outfile, "\tpopq\t%%rax\n");
   free_reg(r2);
   return r1;
@@ -360,33 +368,32 @@ static int cg_div(int r1, int r2) {
 
 /* test the result of r1 - r2 */
 static int cg_compare(int r1, int r2, int idx) {
-  fprintf(Outfile, "\tcmpq\t%s, %s\n", reglist[r2], reglist[r1]);
-  if (isAssign) {
-    fprintf(Outfile, "\t%s\t%s\n", setlist[idx], breglist[r1]);
-    fprintf(Outfile, "\tandq\t$255, %s\n", reglist[r1]);
+  fprintf(Outfile, "\tcmpq\t%s, %s\n", RegList[r2], RegList[r1]);
+  if (IsAssign) {
+    fprintf(Outfile, "\t%s\t%s\n", SetList[idx], BRegList[r1]);
+    fprintf(Outfile, "\tandq\t$255, %s\n", RegList[r1]);
   }
   free_reg(r2);
   return r1;
 }
 
-/* jump to curLab if test failed */
-static void cg_jump(char *how, int curLab) {
+static void cg_jump(char *how, int lab) {
   if (how)
-    fprintf(Outfile, "\t%s\tL%d\n", how, curLab);
+    fprintf(Outfile, "\t%s\tL%d\n", how, lab);
   else
-    fprintf(Outfile, "\tjmp\tL%d\n", curLab);
+    fprintf(Outfile, "\tjmp\tL%d\n", lab);
 }
 
 static int cg_logic_and(int r1, int r2) {
   cg_comment("logic or");
-  fprintf(Outfile, "\tandb\t%s, %s\n", breglist[r2], breglist[r1]);
+  fprintf(Outfile, "\tandb\t%s, %s\n", BRegList[r2], BRegList[r1]);
   free_reg(r2);
   return r1;
 }
 
 static int cg_logic_or(int r1, int r2) {
   cg_comment("logic and");
-  fprintf(Outfile, "\torb\t\t%s, %s\n", breglist[r2], breglist[r1]);
+  fprintf(Outfile, "\torb\t\t%s, %s\n", BRegList[r2], BRegList[r1]);
   free_reg(r2);
   return r1;
 }
@@ -395,28 +402,27 @@ static int cg_logic_or(int r1, int r2) {
 static void cg_return(TreeNode *t) {
   if (t->children[0]) {
     int r = cg_eval(t->children[0]);
-    fprintf(Outfile, "\tmovq\t%s, %%rax\n", reglist[r]);
+    fprintf(Outfile, "\tmovq\t%s, %%rax\n", RegList[r]);
     free_reg(r);
   }
   cg_comment("function postamble");
-  cg_func_postamble(savedFn);
+  cg_func_postamble(TmpFn);
 }
 
 static char *getSizeReg(int size, int idx) {
   if (size == 1)
-    return breglist[idx];
+    return BRegList[idx];
   else if (size == 4)
-    return lreglist[idx];
+    return LRegList[idx];
   else
-    return reglist[idx];
+    return RegList[idx];
 }
 
-static char *getSizeMov(int size) {
-  return movcmd[size / 4];
-}
+static char *getSizeMov(int size) { return MovList[size / 4]; }
+
+static char *getSizeCmp(int size) { return CmpList[size / 4]; }
 
 static int cg_address(TreeNode *t) {
-  cg_comment("load address");
   int id = t->attr.id;
   int scope = getIdentScope(id);
   int kind = getIdentKind(id);
@@ -427,17 +433,18 @@ static int cg_address(TreeNode *t) {
     // 获取数组的起始地址并且存储在寄存器r中
     if (scope == Scope_Glob) {
       char *name = getIdentName(id);
-      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
+      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, RegList[r]);
     } else if (scope == Scope_Para) {
       int offset = getIdentOffset(id);
       TreeNode *tmp = t->children[0];
       t->children[0] = NULL;
       size = getIdentSize(t);
-      fprintf(Outfile, "\t%s\t%d(%%rbp), %s\n", getSizeMov(size), offset, getSizeReg(size, r));
+      fprintf(Outfile, "\t%s\t%d(%%rbp), %s\n", getSizeMov(size), offset,
+              getSizeReg(size, r));
       t->children[0] = tmp;
     } else {
       int offset = getIdentOffset(id);
-      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, reglist[r]);
+      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, RegList[r]);
     }
     size = getIdentSize(t);
     // 如果访问的是某个特定元素比如a[3]
@@ -447,32 +454,34 @@ static int cg_address(TreeNode *t) {
       // 函数调用目前只支持一维数组
       if (scope == Scope_Para) {
         int tmpr = cg_eval(t->children[0]);
-        fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size), getSizeReg(size, tmpr), getSizeReg(size, ir));
+        fprintf(Outfile, "\t%s\t%s, %s\n", getSizeMov(size),
+                getSizeReg(size, tmpr), getSizeReg(size, ir));
         free_reg(tmpr);
       } else {
         int depth = 1;
-        fprintf(Outfile, "\tmovq\t$0, %s\n", reglist[ir]);
+        fprintf(Outfile, "\tmovq\t$0, %s\n", RegList[ir]);
         for (TreeNode *tmp = t->children[0]; tmp; tmp = tmp->sibling) {
-          int dim = getArrayTotal(id, depth+1);
+          int dim = getArrayTotal(id, depth + 1);
           int tmpr = cg_eval(tmp);
           if (dim > 1)
-            fprintf(Outfile, "\timulq\t$%d, %s\n", dim, reglist[tmpr]);
-          fprintf(Outfile, "\taddq\t%s, %s\n", reglist[tmpr], reglist[ir]);
+            fprintf(Outfile, "\timulq\t$%d, %s\n", dim, RegList[tmpr]);
+          fprintf(Outfile, "\taddq\t%s, %s\n", RegList[tmpr], RegList[ir]);
           free_reg(tmpr);
           depth++;
         }
       }
-      fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", reglist[r], reglist[ir], size, reglist[r]);
+      fprintf(Outfile, "\tleaq\t(%s,%s,%d), %s\n", RegList[r], RegList[ir],
+              size, RegList[r]);
       free_reg(ir);
     }
   } else if (kind == Sym_Var) {
     r = allocate_reg();
     if (scope == Scope_Glob) {
       char *name = getIdentName(id);
-      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, reglist[r]);
+      fprintf(Outfile, "\tleaq\t%s(%%rip), %s\n", name, RegList[r]);
     } else {
       int offset = getIdentOffset(id);
-      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, reglist[r]);
+      fprintf(Outfile, "\tleaq\t%d(%%rbp), %s\n", offset, RegList[r]);
     }
   } else {
     fprintf(stderr, "Internal Error: parameter should not be here\n");
@@ -487,7 +496,7 @@ static int cg_eval(TreeNode *root) {
   } else if (root->tok == ASTERISK) {
     cg_comment("dereference");
     int r = cg_eval(root->children[0]);
-    fprintf(Outfile, "\tmovq\t(%s), %s\n", reglist[r], reglist[r]);
+    fprintf(Outfile, "\tmovq\t(%s), %s\n", RegList[r], RegList[r]);
     return r;
   } else if (root->tok == AMPERSAND) {
     cg_comment("get address");
@@ -502,32 +511,33 @@ static int cg_eval(TreeNode *root) {
   if (root->children[1])
     rightreg = cg_eval(root->children[1]);
   switch (root->tok) {
-    case AND:
-      return cg_logic_and(leftreg, rightreg);
-    case OR:
-      return cg_logic_or(leftreg, rightreg);
-    case NUM:
-      return cg_loadnum(root->attr.val);
-    case CH:
-      return cg_loadnum(((int) root->attr.ch));
-    case EQ:
-    case NE:
-    case GT:
-    case GE:
-    case LT:
-    case LE:
-      return cg_compare(leftreg, rightreg, root->tok-EQ);
-    case PLUS:
-      return cg_add(leftreg, rightreg);
-    case MINUS:
-      return cg_sub(leftreg, rightreg);
-    case TIMES:
-      return cg_mul(leftreg, rightreg);
-    case OVER:
-      return cg_div(leftreg, rightreg);
-    default:
-      fprintf(stderr, "Internal Error in function eval\nUnexpected token: %d\n", root->tok);
-      exit(1);
+  case AND:
+    return cg_logic_and(leftreg, rightreg);
+  case OR:
+    return cg_logic_or(leftreg, rightreg);
+  case NUM:
+    return cg_loadnum(root->attr.val);
+  case CH:
+    return cg_loadnum(((int)root->attr.ch));
+  case EQ:
+  case NE:
+  case GT:
+  case GE:
+  case LT:
+  case LE:
+    return cg_compare(leftreg, rightreg, root->tok - EQ);
+  case PLUS:
+    return cg_add(leftreg, rightreg);
+  case MINUS:
+    return cg_sub(leftreg, rightreg);
+  case TIMES:
+    return cg_mul(leftreg, rightreg);
+  case OVER:
+    return cg_div(leftreg, rightreg);
+  default:
+    fprintf(stderr, "Internal Error in function eval\nUnexpected token: %d\n",
+            root->tok);
+    exit(1);
   }
 }
 
@@ -535,78 +545,79 @@ static int cg_eval(TreeNode *root) {
 static void genAST(TreeNode *root) {
   if (!root)
     return;
-  if (root->tok == DECL && getIdentScope(root->children[0]->attr.id) == Scope_Glob)
+  if (root->tok == DECL &&
+      getIdentScope(root->children[0]->attr.id) == Scope_Glob)
     cg_section_data();
   else
     cg_section_text();
   int r;
   int tmplab, tmplab2;
   switch (root->tok) {
-    case FUNC:
-      cg_comment("function preamble");
-      savedFn = root->children[0];
-      cg_func_preamble(savedFn);
-      cg_func_load_params(root->children[2]);
-      genAST(root->children[1]);
-      break;
-    case DECL:
-      for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
-        cg_declaration(t);
-      }
-      break;
-    case ASSIGN:
-      isAssign = 1;
-      r = cg_eval(root->children[1]);
-      cg_assign(root->children[0], r);
-      break;
-    case IF:
-      cg_comment("if statement");
-      tmplab = curLab++;
-      tmplab2 = curLab++;
-      r = cg_eval(root->children[0]);
-      fprintf(Outfile, "\tcmpq\t$1, %s\n", reglist[r]);
-      cg_jump("je", tmplab);
-      free_reg(r);
-      cg_comment("else branch");
-      if (root->children[2]) {
-        genAST(root->children[2]);
-      }
-      cg_jump(NULL, tmplab2);
-      cg_label(tmplab);
-      cg_comment("if branch");
-      tmplab = curLab++;
-      genAST(root->children[1]);
-      cg_label(tmplab2);
-      break;
-    case WHILE:
-      cg_comment("while");
-      tmplab = curLab++;
-      tmplab2 = curLab++;
-      cg_label(tmplab);
-      r = cg_eval(root->children[0]);
-      fprintf(Outfile, "\tcmpq\t$1, %s\n", reglist[r]);
-      cg_jump("jne", tmplab2);
-      free_reg(r);
-      cg_comment("loop body");
-      genAST(root->children[1]);
-      cg_jump(NULL, tmplab);
-      cg_comment("end of while");
-      cg_label(tmplab2);
-      break;
-    case GLUE:
-      genAST(root->children[0]);
-      genAST(root->children[1]);
-      break;
-    case RETURN:
-      cg_comment("return");
-      cg_return(root);
-      break;
-    case CALL:
-      free_reg(cg_call(root));
-      break;
-    default:
-      fprintf(stderr, "Internal Error: unknown sibling type %d\n", root->tok);
-      exit(1);
+  case FUNC:
+    cg_comment("function preamble");
+    TmpFn = root->children[0];
+    cg_func_preamble(TmpFn);
+    cg_func_load_params(root->children[2]);
+    genAST(root->children[1]);
+    break;
+  case DECL:
+    for (TreeNode *t = root->children[0]; t != NULL; t = t->sibling) {
+      cg_declaration(t);
+    }
+    break;
+  case ASSIGN:
+    IsAssign = 1;
+    r = cg_eval(root->children[1]);
+    cg_assign(root->children[0], r);
+    break;
+  case IF:
+    cg_comment("if statement");
+    tmplab = CurLab++;
+    tmplab2 = CurLab++;
+    r = cg_eval(root->children[0]);
+    fprintf(Outfile, "\tcmpq\t$1, %s\n", RegList[r]);
+    cg_jump("je", tmplab);
+    free_reg(r);
+    cg_comment("else branch");
+    if (root->children[2]) {
+      genAST(root->children[2]);
+    }
+    cg_jump(NULL, tmplab2);
+    cg_label(tmplab);
+    cg_comment("if branch");
+    tmplab = CurLab++;
+    genAST(root->children[1]);
+    cg_label(tmplab2);
+    break;
+  case WHILE:
+    cg_comment("while");
+    tmplab = CurLab++;
+    tmplab2 = CurLab++;
+    cg_label(tmplab);
+    r = cg_eval(root->children[0]);
+    fprintf(Outfile, "\tcmpq\t$1, %s\n", RegList[r]);
+    cg_jump("jne", tmplab2);
+    free_reg(r);
+    cg_comment("loop body");
+    genAST(root->children[1]);
+    cg_jump(NULL, tmplab);
+    cg_comment("end of while");
+    cg_label(tmplab2);
+    break;
+  case GLUE:
+    genAST(root->children[0]);
+    genAST(root->children[1]);
+    break;
+  case RETURN:
+    cg_comment("return");
+    cg_return(root);
+    break;
+  case CALL:
+    cg_call(root);
+    break;
+  default:
+    fprintf(stderr, "Internal Error: unknown sibling type %d\n", root->tok);
+    exit(1);
   }
   genAST(root->sibling);
 }

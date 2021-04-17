@@ -1,13 +1,11 @@
 #ifndef __SYMTAB_H__
-#define __SYMTAB_H__ 
+#define __SYMTAB_H__
 
 #include "globals.h"
 
 #define BuildinFunc 4
 
-enum symbolKind {
-  Sym_Unknown, Sym_Func, Sym_Var, Sym_Array
-};
+enum symbolKind { Sym_Unknown, Sym_Func, Sym_Var, Sym_Array };
 
 typedef struct dimRec {
   int dim;
@@ -22,7 +20,7 @@ typedef struct arrayRec {
 typedef struct symRec {
   char *name;
   int type;
-  int kind;  // variable or function
+  int kind; // variable or function
   int scope;
   int offset;
   ArrayRec *arr;

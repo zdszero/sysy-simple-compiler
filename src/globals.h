@@ -1,5 +1,5 @@
 #ifndef __DECL_H__
-#define __DECL_H__ 
+#define __DECL_H__
 
 #define TEXTLEN 512
 #define NSYMBOLS 1024
@@ -8,13 +8,18 @@
 #include <stdio.h>
 
 enum {
-  T_None, T_Void, T_Char, T_Int, T_Long,
-  T_Voidptr, T_Intptr, T_Charptr, T_Longptr
+  T_None,
+  T_Void,
+  T_Char,
+  T_Int,
+  T_Long,
+  T_Voidptr,
+  T_Intptr,
+  T_Charptr,
+  T_Longptr
 };
 
-enum {
-  Scope_Glob, Scope_Local, Scope_Para
-};
+enum { Scope_Glob, Scope_Local, Scope_Para };
 
 typedef struct treeNode {
   struct treeNode *children[CHILDNUM];
@@ -26,15 +31,15 @@ typedef struct treeNode {
   /* attributes for leaf nodes */
   union {
     long val; // number
-    int id;  // identifer
-    char ch; // char
+    int id;   // identifer
+    char ch;  // char
   } attr;
 } TreeNode;
 
 #include "parse.h"
 
 typedef struct token {
-  int token;  // identifier number in symtab
+  int token; // identifier number in symtab
   long numval;
   char text[TEXTLEN + 1];
 } Token;

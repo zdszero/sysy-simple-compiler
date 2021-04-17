@@ -1,5 +1,5 @@
-#include "symtab.h"
 #include "analyze.h"
+#include "symtab.h"
 #include "util.h"
 #include <stdlib.h>
 
@@ -31,11 +31,13 @@ static int isComparable(int t1, int t2) {
   return 1;
 }
 
-/* check type when assigning */
 void checkAssign(TreeNode *t1, TreeNode *t2) {
   int type1 = getIdentType(t1), type2 = getIdentType(t2);
   if (!isComparable(type1, type2)) {
-    fprintf(stderr, "Error: assignment between two types that are not compatible at line %d\n", lineno);
+    fprintf(stderr,
+            "Error: assignment between two types that are not compatible at "
+            "line %d\n",
+            lineno);
     hasError = 1;
   }
 }
@@ -51,8 +53,7 @@ void checkCompare(TreeNode *t) {
   }
 }
 
-/* 1. check the type between two operands 
- * 2. set the type for the target parent node */
+// 检查两个operand的类型，并且自动推断父节点的类型
 void checkCalc(TreeNode *t) {
   TreeNode *t1 = t->children[0], *t2 = t->children[1];
   int type1 = getIdentType(t1), type2 = getIdentType(t2);
@@ -63,7 +64,9 @@ void checkCalc(TreeNode *t) {
     t1->attr.val *= getScaleSize(type2);
     t->type = type2;
   } else if (!isComparable(type1, type2)) {
-    fprintf(stderr, "Error: wrong types for arithmetic calculation at line %d\n", lineno);
+    fprintf(stderr,
+            "Error: wrong types for arithmetic calculation at line %d\n",
+            lineno);
     t->type = T_Long;
     hasError = 1;
   } else {
@@ -88,7 +91,8 @@ void checkReturn(TreeNode *t) {
   }
   if (type == T_Void && flag) {
     if (tmp->children[0]) {
-      fprintf(stderr, "line %d: cannot return value in void function\n", lineno);
+      fprintf(stderr, "line %d: cannot return value in void function\n",
+              lineno);
       hasError = 1;
     }
     return;
@@ -99,7 +103,7 @@ void checkReturn(TreeNode *t) {
   }
 }
 
-/* guess the first dimension of array */
+// 自动推断数字的第一维长度
 void checkArray(TreeNode *t) {
   int id = t->attr.id;
   int d1 = getArrayDimension(id, 1);
@@ -125,8 +129,7 @@ void checkArray(TreeNode *t) {
   setArrayDimension(id, 1, d1);
 }
 
-/* 1. check the count of arguments
- * 2. check the type of arguments */
+// 检查参数的个数与类型
 void checkCall(TreeNode *t) {
   int id = t->children[0]->attr.id;
   if (id < BuildinFunc)
@@ -138,10 +141,14 @@ void checkCall(TreeNode *t) {
   }
   int count = getFuncArgs(id);
   if (args < count) {
-    fprintf(stderr, "Error: missing arguments when calling function %s in line %d\n", getIdentName(id), lineno);
+    fprintf(stderr,
+            "Error: missing arguments when calling function %s in line %d\n",
+            getIdentName(id), lineno);
     hasError = 1;
   } else if (args > count) {
-    fprintf(stderr, "Error: too many arguments when calling function %s in line %d\n", getIdentName(id), lineno);
+    fprintf(stderr,
+            "Error: too many arguments when calling function %s in line %d\n",
+            getIdentName(id), lineno);
     hasError = 1;
   } else {
     int idx = 0;
@@ -149,7 +156,8 @@ void checkCall(TreeNode *t) {
       int type1 = tmp->type;
       int type2 = getFuncParaType(id, idx);
       if (!isComparable(type1, type2)) {
-        fprintf(stderr, "Error: wrong function argument type in line %d\n", lineno);
+        fprintf(stderr, "Error: wrong function argument type in line %d\n",
+                lineno);
         hasError = 1;
         break;
       }

@@ -1,7 +1,7 @@
 #include "symtab.h"
 #include "util.h"
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define FuncCnt 64
 
@@ -18,9 +18,7 @@ SymRec SymTab[NSYMBOLS];
 static int Symbols = 0;
 static int lastLocal = NSYMBOLS - 1;
 static int Locals = NSYMBOLS - 1;
-static char *builtinFn[] = {
-  "putch", "putint", "putlong", "putarray"
-};
+static char *builtinFn[] = {"putch", "putint", "putlong", "putarray"};
 
 FuncRange ranges[FuncCnt];
 
@@ -61,21 +59,22 @@ void updateFuncRange(int id) {
 int pointerTo(int type) {
   int newtype;
   switch (type) {
-    case T_Void:
-      newtype = T_Voidptr;
-      break;
-    case T_Char:
-      newtype = T_Charptr;
-      break;
-    case T_Int:
-      newtype = T_Intptr;
-      break;
-    case T_Long:
-      newtype = T_Longptr;
-      break;
-    default:
-      fprintf(stderr, "Unrecognized type %d to point to in line %d\n", type, lineno);
-      exit(1);
+  case T_Void:
+    newtype = T_Voidptr;
+    break;
+  case T_Char:
+    newtype = T_Charptr;
+    break;
+  case T_Int:
+    newtype = T_Intptr;
+    break;
+  case T_Long:
+    newtype = T_Longptr;
+    break;
+  default:
+    fprintf(stderr, "Unrecognized type %d to point to in line %d\n", type,
+            lineno);
+    exit(1);
   }
   return newtype;
 }
@@ -83,21 +82,21 @@ int pointerTo(int type) {
 int valueAt(int type) {
   int newtype;
   switch (type) {
-    case T_Voidptr:
-      newtype = T_Void;
-      break;
-    case T_Charptr:
-      newtype = T_Char;
-      break;
-    case T_Intptr:
-      newtype = T_Int;
-      break;
-    case T_Longptr:
-      newtype = T_Long;
-      break;
-    default:
-      fprintf(stderr, "Unrecognized type to dereference in line %d\n", lineno);
-      exit(1);
+  case T_Voidptr:
+    newtype = T_Void;
+    break;
+  case T_Charptr:
+    newtype = T_Char;
+    break;
+  case T_Intptr:
+    newtype = T_Int;
+    break;
+  case T_Longptr:
+    newtype = T_Long;
+    break;
+  default:
+    fprintf(stderr, "Unrecognized type to dereference in line %d\n", lineno);
+    exit(1);
   }
   return newtype;
 }
@@ -120,9 +119,7 @@ int newIdent(char *s, int kind, int type, int scope) {
   return idx;
 }
 
-void setIdentType(int id, int type) {
-  SymTab[id].type = type;
-}
+void setIdentType(int id, int type) { SymTab[id].type = type; }
 
 void setIdentKind(int id, int kind) {
   SymTab[id].kind = kind;
@@ -130,9 +127,7 @@ void setIdentKind(int id, int kind) {
     lastFn = id;
 }
 
-void setIdentOffset(int id, int offset) {
-  SymTab[id].offset = offset;
-}
+void setIdentOffset(int id, int offset) { SymTab[id].offset = offset; }
 
 /* find identifier in symbol table and return its index */
 int getIdentId(char *s) {
@@ -152,9 +147,7 @@ int getIdentId(char *s) {
   return -1;
 }
 
-char *getIdentName(int id) {
-  return SymTab[id].name;
-}
+char *getIdentName(int id) { return SymTab[id].name; }
 
 int getIdentType(TreeNode *t) {
   int type;
@@ -167,21 +160,13 @@ int getIdentType(TreeNode *t) {
   return type;
 }
 
-int getIdentKind(int id) {
-  return SymTab[id].kind;
-}
+int getIdentKind(int id) { return SymTab[id].kind; }
 
-int getIdentOffset(int id) {
-  return SymTab[id].offset;
-}
+int getIdentOffset(int id) { return SymTab[id].offset; }
 
-int getIdentScope(int id) {
-  return SymTab[id].scope;
-}
+int getIdentScope(int id) { return SymTab[id].scope; }
 
-int getIdentSize(TreeNode *t) {
-  return getTypeSize(getIdentType(t));
-}
+int getIdentSize(TreeNode *t) { return getTypeSize(getIdentType(t)); }
 
 int getArrayDimension(int id, int d) {
   DimRec *tmp = SymTab[id].arr->first;
@@ -202,9 +187,7 @@ int getArrayTotal(int id, int level) {
   return ans;
 }
 
-int getArrayDims(int id) {
-  return SymTab[id].arr->dims;
-}
+int getArrayDims(int id) { return SymTab[id].arr->dims; }
 
 void setArrayDimension(int id, int d, int val) {
   DimRec *tmp = SymTab[id].arr->first;
@@ -225,7 +208,7 @@ int getFuncArgs(int id) {
 }
 
 int getFuncParaType(int id, int idx) {
-  return SymTab[ranges[id].start-idx].type;
+  return SymTab[ranges[id].start - idx].type;
 }
 
 int getFuncParaSize(int id, int idx) {
@@ -253,11 +236,11 @@ void setDimension(int id, int level, int val) {
 }
 
 void addDimension(int id, int d) {
-  DimRec *dr = (DimRec *) malloc(sizeof(DimRec));
+  DimRec *dr = (DimRec *)malloc(sizeof(DimRec));
   dr->dim = d;
   dr->next = NULL;
   if (!SymTab[id].arr) {
-    SymTab[id].arr = (ArrayRec *) malloc(sizeof(ArrayRec));
+    SymTab[id].arr = (ArrayRec *)malloc(sizeof(ArrayRec));
     SymTab[id].arr->dims = 0;
   }
   DimRec *tmp = SymTab[id].arr->first;
