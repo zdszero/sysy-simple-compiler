@@ -220,12 +220,12 @@ void printDimension(int id) {
   if (!SymTab[id].arr)
     return;
   DimRec *tmp = SymTab[id].arr->first;
-  fprintf(Outfile, "(");
+  printf("(");
   while (tmp) {
-    fprintf(Outfile, "%d,", tmp->dim);
+    printf("%d,", tmp->dim);
     tmp = tmp->next;
   }
-  fprintf(Outfile, ")");
+  printf(")");
 }
 
 void setDimension(int id, int level, int val) {

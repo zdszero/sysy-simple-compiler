@@ -51,5 +51,6 @@ void addDimension(int id, int d);
 int pointerTo(int type);
 int valueAt(int type);
 void printDimension(int id);
+void printSymTab();
 
 #endif

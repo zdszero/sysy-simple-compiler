@@ -1,7 +1,7 @@
 *.o
 cm
 out.s
-out
+a.out
 parse.c
 parse.h
 scan.c

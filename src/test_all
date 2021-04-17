@@ -3,20 +3,18 @@
 if [[ $# -eq 1 ]]; then
   file=$1
   printf ">> file $file\n"
-  ./cm ../test/$file > out.s
+  ./cm ../test/$file
   [[ $? -ne 0 ]] && exit 1
-  cc -o out out.s ../lib/printint.c
-  ./out
+  ./a.out
   exit 0
 fi
 
 for file in $(ls ../test); do
   if [[ $file == *.sy ]]; then
     printf "\n>> file $file\n"
-    ./cm ../test/$file > out.s
+    ./cm ../test/$file
     [[ $? -ne 0 ]] && continue
-    cc -o out out.s ../lib/printint.c
-    ./out
+    ./a.out
   fi
 done
 

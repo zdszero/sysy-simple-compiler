@@ -26,6 +26,8 @@ enum { RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9, RAX };
 static int CurLab = 1;
 // 当前程序段：data，text
 static int CurSec = -1;
+// 当前变量的大小
+static int VarSize = 8;
 // 是否存储cmp的结果到寄存器
 static int IsAssign = 1;
 // 是否在生成的汇编代码中使用注释
@@ -199,10 +201,12 @@ static int cg_loadvar(TreeNode *t) {
   int kind = getIdentKind(t->attr.id);
   int r;
   if (kind == Sym_Array && !t->children[0]) {
+    VarSize = 64;
     int r = cg_address(t);
     return r;
   } else {
     int size = getIdentSize(t);
+    VarSize = size;
     r = cg_address(t);
     fprintf(Outfile, "\t%s\t(%s), %s\n", getSizeMov(size), RegList[r],
             getSizeReg(size, r));
@@ -368,7 +372,8 @@ static int cg_div(int r1, int r2) {
 
 /* test the result of r1 - r2 */
 static int cg_compare(int r1, int r2, int idx) {
-  fprintf(Outfile, "\tcmpq\t%s, %s\n", RegList[r2], RegList[r1]);
+  fprintf(Outfile, "\t%s\t%s, %s\n", getSizeCmp(VarSize),
+          getSizeReg(VarSize, r2), getSizeReg(VarSize, r1));
   if (IsAssign) {
     fprintf(Outfile, "\t%s\t%s\n", SetList[idx], BRegList[r1]);
     fprintf(Outfile, "\tandq\t$255, %s\n", RegList[r1]);
@@ -526,6 +531,7 @@ static int cg_eval(TreeNode *root) {
   case LT:
   case LE:
     return cg_compare(leftreg, rightreg, root->tok - EQ);
+    VarSize = 64;
   case PLUS:
     return cg_add(leftreg, rightreg);
   case MINUS:
