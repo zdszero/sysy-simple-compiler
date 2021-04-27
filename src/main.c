@@ -72,8 +72,8 @@ int main(int argc, char *argv[]) {
   // 默认生成prefix.s文件
   outFileName = strdup(inFileName);
   int len = strlen(outFileName);
-  outFileName[len-1] = '\0';
-  outFileName[len-2] = 's';
+  outFileName[len - 1] = '\0';
+  outFileName[len - 2] = 's';
   Outfile = fopen(outFileName, "w");
   Tok.token = -1;
   yyparse();
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
   fclose(Infile);
   fclose(Outfile);
   // 否则就生成可执行文件，删除汇编文件
-  if (!traceAsm) {
+  if (!traceScan && !traceParse && !traceParse && !traceAsm) {
     char cmd[128];
     // 如果-o选项没有指定参数，默认生成a.out可执行文件
     if (!exeFileName)

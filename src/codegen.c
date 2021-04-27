@@ -10,18 +10,18 @@ enum { SEC_Data, SEC_Text };
 
 // 0：被占用    1：空闲
 static int Regs[REGCOUNT];
-static char *RegList[REGCOUNT] = {"%rbx", "%r10", "%r11", "%rdi", "%rsi",
-                                  "%rdx", "%rcx", "%r8",  "%r9",  "%rax"};
-static char *LRegList[REGCOUNT] = {"%ebx", "%r10d", "%r11d", "%edi", "%esi",
-                                   "%edx", "%ecx",  "%r8d",  "%r9d", "%eax"};
-static char *BRegList[REGCOUNT] = {"%bl", "%r10b", "%r11b", "%dil", "%sil",
-                                   "%dl", "%cl",   "%r8b",  "%r9b", "%al"};
+static char *RegList[REGCOUNT] = {"%rax", "%rbx", "%r10", "%r11", "%rdi",
+                                  "%rsi", "%rdx", "%rcx", "%r8",  "%r9"};
+static char *LRegList[REGCOUNT] = {"%eax", "%ebx", "%r10d", "%r11d", "%edi",
+                                   "%esi", "%edx", "%ecx",  "%r8d",  "%r9d"};
+static char *BRegList[REGCOUNT] = {"%al",  "%bl", "%r10b", "%r11b", "%dil",
+                                   "%sil", "%dl", "%cl",   "%r8b",  "%r9b"};
 static char *SetList[REGCOUNT] = {"sete", "setne", "setle",
                                   "setl", "setge", "setg"};
 static char *MovList[3] = {"movb", "movl", "movq"};
 static char *CmpList[3] = {"cmpb", "cmpl", "cmpq"};
 static char *JmpList[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
-enum { RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9, RAX };
+enum { RAX, RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9 };
 // 下一个可以使用的Label编号
 static int CurLab = 1;
 // 当前程序段：data，text
@@ -99,7 +99,7 @@ static void cg_comment(char *msg) {
   }
 }
 
-static void cg_label(int lab) { fprintf(Outfile, "L%d:\n", lab); }
+static void cg_label(int lab) { fprintf(Outfile, ".L%d:\n", lab); }
 
 static void freeall_regs() {
   for (int i = 0; i < REGCOUNT; i++)
@@ -167,9 +167,13 @@ static int cg_call(TreeNode *t) {
   cg_comment("func call");
   int id = t->children[0]->attr.id;
   int type = t->children[0]->type;
+  // 如果返回类型不为void，那么用%rax来传递返回值
+  if (type != T_Void)
+    Regs[RAX] = 0;
   char *name = getIdentName(id);
   TreeNode *tmp = t->children[1];
   int i = 0;
+  // 依次传递函数所需要的参数
   while (tmp) {
     int tmpr = cg_eval(tmp);
     int size = getFuncParaSize(id, i);
@@ -180,10 +184,11 @@ static int cg_call(TreeNode *t) {
     i++;
   }
   fprintf(Outfile, "\tcall\t%s\n", name);
-  // 当函数调用出现在表达式当中时
+  // 传递完返回值后恢复%rax的空闲状态
   if (type != T_Void) {
     int r = allocate_reg();
     fprintf(Outfile, "\tmovq\t%%rax, %s\n", RegList[r]);
+    Regs[RAX] = 1;
     return r;
   }
   // 当处理函数调用语句时，不需要返回值
@@ -384,9 +389,9 @@ static int cg_compare(int r1, int r2, int idx) {
 
 static void cg_jump(char *how, int lab) {
   if (how)
-    fprintf(Outfile, "\t%s\tL%d\n", how, lab);
+    fprintf(Outfile, "\t%s\t.L%d\n", how, lab);
   else
-    fprintf(Outfile, "\tjmp\tL%d\n", lab);
+    fprintf(Outfile, "\tjmp\t.L%d\n", lab);
 }
 
 static int cg_logic_and(int r1, int r2) {
