@@ -22,14 +22,14 @@
 /* tokens used for scanning */
 %token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
 %token AND OR AMPERSAND ASTERISK COMMA
-%token PLUS MINUS TIMES OVER LEVEL
+%token PLUS MINUS TIMES OVER MOD LEVEL
 %token EQ NE LE LT GE GT
 %token LP RP LC RC LS RS
 /* operator precedence */
 %left AND OR
 %left EQ NE LE LT GE GT
 %left PLUS MINUS
-%left TIMES OVER
+%left TIMES OVER MOD
 /* pick a choice between shift-reduce conflict */
 %precedence RP AMPERSAND
 %precedence ELSE LS LP
@@ -125,7 +125,7 @@ var : IDENT
           $$->attr.id = newIdent(Tok.text, Sym_Unknown, T_None, scopeAttr);
         }
         else {
-          fprintf(Outfile, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
+          fprintf(stderr, "Error: variable %s already defined, redefined at line %d\n", Tok.text, lineno);
           hasError = 1;
         }
       }
@@ -450,6 +450,12 @@ expression : expression AND expression
              }
            | expression OVER expression
              { $$ = mkTreeNode(OVER);
+               $$->children[0] = $1;
+               $$->children[1] = $3;
+               checkCalc($$);
+             }
+           | expression MOD expression
+             { $$ = mkTreeNode(MOD);
                $$->children[0] = $1;
                $$->children[1] = $3;
                checkCalc($$);

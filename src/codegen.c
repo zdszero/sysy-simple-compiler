@@ -66,6 +66,7 @@ static int cg_add(int r1, int r2);
 static int cg_sub(int r1, int r2);
 static int cg_mul(int r1, int r2);
 static int cg_div(int r1, int r2);
+static int cg_mod(int r1, int r2);
 static int cg_compare(int r1, int r2, int idx);
 static void cg_jump(char *how, int lab);
 static int cg_logic_and(int r1, int r2);
@@ -358,18 +359,38 @@ static int cg_mul(int r1, int r2) {
   return r1;
 }
 
-/* r1: divident    r2: divisor */
+// r1：被除数，r2：除数
 static int cg_div(int r1, int r2) {
-  if (Regs[RAX] == 0)
+  // 如果RAX、RBX被占用且不是用于除法，保存它们的值。
+  if (Regs[RAX] == 0 && r1 != RAX)
     fprintf(Outfile, "\tpushq\t%%rax\n");
-  /* the divident is stored in %rax */
+  if (Regs[RDX] == 0 && r2 != RDX)
+    fprintf(Outfile, "\tpushq\t%%rdx\n");
   fprintf(Outfile, "\tmovq\t%s, %%rax\n", RegList[r1]);
-  /* change quad byte to octal byte */
   fprintf(Outfile, "\tcqo\n");
   fprintf(Outfile, "\tidivq\t%s\n", RegList[r2]);
-  /* store the result back into r1 */
   fprintf(Outfile, "\tmovq\t%%rax, %s\n", RegList[r1]);
-  if (Regs[RAX] == 0)
+  if (Regs[RDX] == 0 && r2 != RDX)
+    fprintf(Outfile, "\tpopq\t%%rdx\n");
+  if (Regs[RAX] == 0 && r1 != RAX)
+    fprintf(Outfile, "\tpopq\t%%rax\n");
+  free_reg(r2);
+  return r1;
+}
+
+static int cg_mod(int r1, int r2) {
+  // 如果RAX、RBX被占用且不是用于除法，保存它们的值。
+  if (Regs[RAX] == 0 && r1 != RAX)
+    fprintf(Outfile, "\tpushq\t%%rax\n");
+  if (Regs[RDX] == 0 && r2 != RDX)
+    fprintf(Outfile, "\tpushq\t%%rdx\n");
+  fprintf(Outfile, "\tmovq\t%s, %%rax\n", RegList[r1]);
+  fprintf(Outfile, "\tcqo\n");
+  fprintf(Outfile, "\tidivq\t%s\n", RegList[r2]);
+  fprintf(Outfile, "\tmovq\t%%rdx, %s\n", RegList[r1]);
+  if (Regs[RDX] == 0 && r2 != RDX)
+    fprintf(Outfile, "\tpopq\t%%rdx\n");
+  if (Regs[RAX] == 0 && r1 != RAX)
     fprintf(Outfile, "\tpopq\t%%rax\n");
   free_reg(r2);
   return r1;
@@ -545,6 +566,8 @@ static int cg_eval(TreeNode *root) {
     return cg_mul(leftreg, rightreg);
   case OVER:
     return cg_div(leftreg, rightreg);
+  case MOD:
+    return cg_mod(leftreg, rightreg);
   default:
     fprintf(stderr, "Internal Error in function eval\nUnexpected token: %d\n",
             root->tok);

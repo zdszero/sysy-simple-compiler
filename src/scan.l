@@ -53,6 +53,7 @@ space      [ \t]+
 "-"           { return MINUS;     }
 "*"           { return TIMES;     }
 "/"           { return OVER;      }
+"%"           { return MOD;       }
 ";"           { return SEMI;      }
 "("           { scopeStack[++top] = scopeAttr;
                 scopeAttr = Scope_Para;

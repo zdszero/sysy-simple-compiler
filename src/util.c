@@ -33,7 +33,7 @@ struct record nameMap[] = {
     {OR, "or"},       {AND, "and"},     {AMPERSAND, "&"}, {ASTERISK, "*"},
     {EQ, "eq"},       {NE, "ne"},       {GT, "gt"},       {GE, "ge"},
     {LT, "lt"},       {LE, "le"},       {PLUS, "plus"},   {MINUS, "minus"},
-    {TIMES, "times"}, {OVER, "over"},   {YYEOF, "eof"}};
+    {TIMES, "times"}, {OVER, "over"},   {MOD, "mod"},     {YYEOF, "eof"}};
 
 char *getTokenName(int val) {
   int n = sizeof(nameMap) / sizeof(struct record);
