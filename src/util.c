@@ -24,16 +24,20 @@ struct record {
 };
 
 struct record nameMap[] = {
-    {FUNC, "func"},   {DECL, "decl"},   {VOID, "void"},   {CHAR, "char"},
-    {INT, "int"},     {LONG, "long"},   {CH, "ch"},       {RETURN, "return"},
-    {SEMI, "semi"},   {COMMA, "comma"}, {IF, "if"},       {ELSE, "else"},
-    {WHILE, "while"}, {FOR, "for"},     {GLUE, "glue"},   {LEVEL, "level"},
-    {CALL, "call"},   {LP, "lp"},       {RP, "rp"},       {LC, "lc"},
-    {RC, "rc"},       {LS, "ls"},       {RS, "rs"},       {ASSIGN, "assign"},
-    {OR, "or"},       {AND, "and"},     {AMPERSAND, "&"}, {ASTERISK, "*"},
-    {EQ, "eq"},       {NE, "ne"},       {GT, "gt"},       {GE, "ge"},
-    {LT, "lt"},       {LE, "le"},       {PLUS, "plus"},   {MINUS, "minus"},
-    {TIMES, "times"}, {OVER, "over"},   {MOD, "mod"},     {YYEOF, "eof"}};
+    {FUNC, "func"},   {DECL, "decl"},     {VOID, "void"},
+    {CHAR, "char"},   {INT, "int"},       {LONG, "long"},
+    {CH, "ch"},       {RETURN, "return"}, {CONTINUE, "continue"},
+    {BREAK, "break"}, {SEMI, "semi"},     {COMMA, "comma"},
+    {IF, "if"},       {ELSE, "else"},     {WHILE, "while"},
+    {FOR, "for"},     {GLUE, "glue"},     {LEVEL, "level"},
+    {CALL, "call"},   {LP, "lp"},         {RP, "rp"},
+    {LC, "lc"},       {RC, "rc"},         {LS, "ls"},
+    {RS, "rs"},       {ASSIGN, "assign"}, {OR, "or"},
+    {AND, "and"},     {AMPERSAND, "&"},   {ASTERISK, "*"},
+    {EQ, "eq"},       {NE, "ne"},         {GT, "gt"},
+    {GE, "ge"},       {LT, "lt"},         {LE, "le"},
+    {PLUS, "plus"},   {MINUS, "minus"},   {TIMES, "times"},
+    {OVER, "over"},   {MOD, "mod"},       {YYEOF, "eof"}};
 
 char *getTokenName(int val) {
   int n = sizeof(nameMap) / sizeof(struct record);

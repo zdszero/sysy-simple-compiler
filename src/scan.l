@@ -34,6 +34,8 @@ space      [ \t]+
 "while"       { return WHILE;     }
 "for"         { return FOR;       }
 "return"      { return RETURN;    }
+"continue"    { return CONTINUE;  }
+"break"       { return BREAK;     }
 "=="          { return EQ;        }
 "!="          { return NE;        }
 ">"           { return GT;        }

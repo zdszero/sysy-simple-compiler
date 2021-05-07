@@ -20,7 +20,7 @@
 /* specity node kind, not regarded as tokens */
 %token GLUE FUNC DECL CALL
 /* tokens used for scanning */
-%token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN
+%token INT VOID CHAR LONG IDENT NUM CH SEMI ASSIGN IF ELSE WHILE FOR RETURN CONTINUE BREAK
 %token AND OR AMPERSAND ASTERISK COMMA
 %token PLUS MINUS TIMES OVER MOD LEVEL
 %token EQ NE LE LT GE GT
@@ -315,7 +315,7 @@ statement : var_declaraton       { $$ = $1; }
           | while_statement      { $$ = $1; }
           | for_statement        { $$ = $1; }
           | expression_statement { $$ = $1; }
-          | return_statement     { $$ = $1; }
+          | jump_statement       { $$ = $1; }
           ;
 
 assign_statement : var_ref ASSIGN expression SEMI
@@ -373,14 +373,20 @@ expression_statement : expression SEMI { /* skip */ }
                      | SEMI { /* skip */ }
                      ;
 
-return_statement : RETURN expression SEMI
-                   { $$ = mkTreeNode(RETURN);
-                     $$->children[0] = $2;
-                   }
-                 | RETURN SEMI
-                   {  $$ = mkTreeNode(RETURN);
-                   }
-                 ;
+jump_statement : RETURN expression SEMI
+                 { $$ = mkTreeNode(RETURN);
+                   $$->children[0] = $2;
+                 }
+               | RETURN SEMI
+                 {  $$ = mkTreeNode(RETURN);
+                 }
+               | CONTINUE SEMI
+                 {  $$ = mkTreeNode(CONTINUE);
+                 }
+               | BREAK SEMI
+                 {  $$ = mkTreeNode(BREAK);
+                 }
+               ;
 
 expression : expression AND expression
              { $$ = mkTreeNode(AND);

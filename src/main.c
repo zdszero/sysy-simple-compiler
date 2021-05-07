@@ -80,10 +80,14 @@ int main(int argc, char *argv[]) {
   // 判断编译是否出现错误
   if (hasError)
     exit(1);
-  if (traceParse)
+  if (traceParse) {
     printTree(syntaxTree, 0);
-  if (traceSymbols)
+    return 0;
+  }
+  if (traceSymbols) {
     printSymTab();
+    return 0;
+  }
   // 如果制定了-S选项，只编译而不进行汇编和链接
   genCode(syntaxTree);
   fclose(Infile);

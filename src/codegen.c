@@ -20,7 +20,7 @@ static char *SetList[REGCOUNT] = {"sete", "setne", "setle",
                                   "setl", "setge", "setg"};
 static char *MovList[3] = {"movb", "movl", "movq"};
 static char *CmpList[3] = {"cmpb", "cmpl", "cmpq"};
-static char *JmpList[6] = {"jne", "je", "jg", "jge", "jl", "jle"};
+/* static char *JmpList[6] = {"jne", "je", "jg", "jge", "jl", "jle"}; */
 enum { RAX, RBX, R10, R11, RDI, RSI, RDX, RCX, R8, R9 };
 // 下一个可以使用的Label编号
 static int CurLab = 1;
@@ -34,6 +34,8 @@ static int IsAssign = 1;
 static int CommentFlag = 1;
 // 暂存的函数结点
 static TreeNode *TmpFn;
+// 暂存的符号信息
+static int Lab_while_in[5], Lab_while_out, Lab_idx = 0;
 
 /********************************
  *  function declaration        *
@@ -188,8 +190,10 @@ static int cg_call(TreeNode *t) {
   // 传递完返回值后恢复%rax的空闲状态
   if (type != T_Void) {
     int r = allocate_reg();
-    fprintf(Outfile, "\tmovq\t%%rax, %s\n", RegList[r]);
-    Regs[RAX] = 1;
+    if (r != RAX) {
+      fprintf(Outfile, "\tmovq\t%%rax, %s\n", RegList[r]);
+      Regs[RAX] = 1;
+    }
     return r;
   }
   // 当处理函数调用语句时，不需要返回值
@@ -429,7 +433,6 @@ static int cg_logic_or(int r1, int r2) {
   return r1;
 }
 
-/* returned value is stored in register r, switch type according to id */
 static void cg_return(TreeNode *t) {
   if (t->children[0]) {
     int r = cg_eval(t->children[0]);
@@ -626,7 +629,9 @@ static void genAST(TreeNode *root) {
   case WHILE:
     cg_comment("while");
     tmplab = CurLab++;
+    Lab_while_in[Lab_idx++] = tmplab;
     tmplab2 = CurLab++;
+    Lab_while_out = tmplab2;
     cg_label(tmplab);
     r = cg_eval(root->children[0]);
     fprintf(Outfile, "\tcmpq\t$1, %s\n", RegList[r]);
@@ -637,6 +642,7 @@ static void genAST(TreeNode *root) {
     cg_jump(NULL, tmplab);
     cg_comment("end of while");
     cg_label(tmplab2);
+    Lab_idx--;
     break;
   case GLUE:
     genAST(root->children[0]);
@@ -646,6 +652,13 @@ static void genAST(TreeNode *root) {
     cg_comment("return");
     cg_return(root);
     break;
+  case CONTINUE:
+    cg_comment("continue");
+    fprintf(Outfile, "\tjmp\t.L%d\n", Lab_while_in[Lab_idx-1]);
+    break;
+  case BREAK:
+    cg_comment("break");
+    fprintf(Outfile, "\tjmp\t.L%d\n", Lab_while_out);
   case CALL:
     cg_call(root);
     break;
