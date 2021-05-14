@@ -1,0 +1,6 @@
+int main() {
+    int x = 10;
+    x = (x + 3 + 5 - 3* 4 / (8 - (2+2))) % 4;
+    putint(x);
+    return 0;
+}

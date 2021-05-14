@@ -1,0 +1,11 @@
+int main() {
+  int a[] = {12, 43, 3, 6, 23, 9};
+  int i = 0;
+  while (i < 6) {
+    if (a[i] > 10) {
+      putint(a[i]);
+    }
+    i = i+1;
+  }
+  return 0;
+}

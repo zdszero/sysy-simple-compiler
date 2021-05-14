@@ -1,0 +1,11 @@
+int foo(int num) {
+  return 20;
+}
+
+int main() {
+  int result;
+  result = foo(15);
+  putint(result);
+  putint(result + foo(foo(foo(10))));
+  return 0;
+}

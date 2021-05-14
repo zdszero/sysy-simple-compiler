@@ -7,4 +7,3 @@ parse.h
 scan.c
 ref/**
 report/**
-test/**

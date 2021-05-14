@@ -1,0 +1,20 @@
+int sum(int start, int end) {
+  int i = start;
+  int s = 0;
+  while (i <= end) {
+    if (i % 2 == 0) {
+      i = i+1;
+      continue;
+    }
+    s = s+i;
+    i = i+1;
+  }
+  return s;
+}
+
+int main() {
+  int ans;
+  ans = sum(1, 100);
+  putint(ans);
+  return 0;
+}

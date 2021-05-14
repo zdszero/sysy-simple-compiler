@@ -1,0 +1,24 @@
+void quickSort(int a[], int start, int end) {
+  if (start >= end) { return; }
+  int base = a[start], l = start, r = end;
+  while (l < r) {
+    while (l < r && a[r] >= base) { r = r-1; }
+    a[l] = a[r];
+    while (l < r && a[l] <= base) { l = l+1; }
+    a[r] = a[l];
+  }
+  a[l] = base;
+  quickSort(a, start, l-1);
+  quickSort(a, l+1, end);
+}
+
+int main() {
+    int arr[10] = {
+        32, 24, 6, 15, 44,
+        94, 3, 54, 86, 21
+    };
+    putarray(10, arr);
+    quickSort(arr, 0, 9);
+    putarray(10, arr);
+    return 0;
+}

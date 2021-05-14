@@ -1,0 +1,12 @@
+void func(int arr[], int i) {
+  arr[i] = arr[i] * 30;
+  putarray(6, arr);
+  return;
+}
+
+int main() {
+  int a[] = {0,1,2,3,4,5};
+  func(a, 3);
+  putint(a[3]);
+  return 0;
+}
