@@ -20,7 +20,7 @@ typedef struct arrayRec {
 typedef struct symRec {
   char *name;
   int type;
-  int kind; // variable or function
+  int kind;
   int scope;
   int offset;
   ArrayRec *arr;

@@ -9,7 +9,6 @@ int args = 0;
 static int lastFn;
 
 typedef struct funcRange {
-  int flag;
   int start;
   int end;
 } FuncRange;
@@ -47,7 +46,6 @@ __attribute__((constructor)) static void initSymtab() {
 void setFuncRange(int id) {
   ranges[id].start = lastLocal;
   ranges[id].end = Locals;
-  ranges[id].flag = 1;
   lastLocal = Locals;
 }
 
@@ -273,13 +271,11 @@ void printSymTab() {
     printSymbol(i);
   printf("\nLocals\n");
   for (int i = 0; i < FuncCnt; i++) {
-    if (ranges[i].flag == 1) {
-      printf("%s : ", SymTab[i].name);
-      for (int j = ranges[i].start; j > ranges[i].end; j--) {
-        printSymbol(j);
-      }
-      putchar('\n');
+    printf("%s : ", SymTab[i].name);
+    for (int j = ranges[i].start; j > ranges[i].end; j--) {
+      printSymbol(j);
     }
+    putchar('\n');
   }
   putchar('\n');
 }
